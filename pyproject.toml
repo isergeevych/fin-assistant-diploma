@@ -23,6 +23,10 @@ dependencies = [
     "aiofiles>=25.1.0",
     "tiktoken>=0.14.0",
     "aiogram>=3.31.0",
+    "pypdf>=6.20.0",
+    "python-docx>=1.2.0",
+    "python-multipart>=0.0.32",
+    "tenacity>=9.2.1",
 ]
 
 [dependency-groups]

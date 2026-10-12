@@ -17,7 +17,7 @@ import structlog
 from app.core.exceptions import InputRejectedError, OutputBlockedError
 from app.observability.pii import redact_pii
 from app.services.security import output_filter
-from app.services.security.input_validator import validate_input
+from app.services.security.input_validator import MAX_INPUT_CHARS, validate_input
 
 log = structlog.get_logger("security")
 
@@ -38,6 +38,17 @@ class SecurityGuard:
             result = validate_input(content)
             if not result.ok:
                 self._reject(result.rule or "input", "Запрос отклонён фильтром безопасности")
+
+    def check_document(self, text: str) -> None:
+        """Косвенная инъекция: текст из PDF/DOCX/голоса проверяется на шаблоны атак.
+        Лимит длины здесь не применяется — документ законно может быть длинным."""
+        if not self.enabled:
+            return
+        step = MAX_INPUT_CHARS - 200  # окна с перекрытием: фраза на стыке окон не проскочит
+        for start in range(0, max(len(text), 1), step):
+            result = validate_input(text[start:start + MAX_INPUT_CHARS])
+            if not result.ok and result.rule in {"injection", "unicode", "base64"}:
+                self._reject(f"document_{result.rule}", "Вложение отклонено фильтром безопасности")
 
     @staticmethod
     def _reject(rule: str, message: str) -> None:

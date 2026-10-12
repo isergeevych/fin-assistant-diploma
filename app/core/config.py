@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     llm_safety_margin_tokens: int = 512
     database_url: str = "postgresql+asyncpg://fin:fin@127.0.0.1:5433/fin"
 
+    # --- Мультимодальность и обратный канал в бота (Б4.3) ---
+    # Whisper (голос → текст) есть только у OpenAI напрямую; без ключа голосовые отклоняются с 503.
+    openai_api_key: SecretStr | None = None
+    bot_url: str = "http://bot:9000"
+    internal_token: SecretStr | None = None  # общий секрет app ↔ bot для /notify и системных эндпоинтов
+    bot_api_port: int = 9000
+
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True

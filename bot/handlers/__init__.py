@@ -3,10 +3,10 @@
 
 from aiogram import Router
 
-from bot.handlers import commands, fsm, text
+from bot.handlers import commands, fsm, media, text
 
 
 def build_router() -> Router:
     root = Router(name="root")
-    root.include_routers(commands.router, fsm.router, text.router)
+    root.include_routers(commands.router, fsm.router, media.router, text.router)
     return root

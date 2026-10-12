@@ -71,12 +71,22 @@ class ChatService:
     def check_input(self, content: str) -> None:
         self.guard.check([("user", content)])
 
-    async def send_message(self, chat_id: UUID, user_content: str) -> AsyncIterator[str]:
+    def check_media_part(self, part: dict) -> None:
+        """Текст из документа/голоса — недоверенные данные: проверка на косвенную инъекцию."""
+        if part.get("type") == "text":
+            self.guard.check_document(part.get("text", ""))
+
+    async def send_message(self, chat_id: UUID, user_content: str,
+                           media_part: dict | None = None, media_meta: dict | None = None) -> AsyncIterator[str]:
         chat = await self.get_chat(chat_id)
         self.check_input(user_content)
+        media_refs = None
+        if media_part is not None:
+            self.check_media_part(media_part)
+            media_refs = {**(media_meta or {}), "part": media_part}
         await self.repo.append_message(
             chat_id, ChatMessage(chat_id=chat_id, role="user", content=user_content,
-                                 tokens=count_text_tokens(user_content)))
+                                 tokens=count_text_tokens(user_content), media_refs=media_refs))
 
         history = await self.repo.list_messages(chat_id, limit=self.settings.chat_context_window)
         messages = self.build_messages(chat, history)

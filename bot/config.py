@@ -1,6 +1,7 @@
 """Настройки бота (pydantic-settings). Токен — SecretStr, читается из .env (в git не попадает)."""
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,6 +18,11 @@ class BotSettings(BaseSettings):
     backend_timeout_sec: float = 30.0
     # Не чаще одного edit_text на сообщение в секунду: иначе Telegram отвечает 429 Too Many Requests
     stream_edit_interval_sec: float = 1.0
+    stream_mode: Literal["draft", "edit"] = "draft"  # Б4.3: нативный sendMessageDraft или edit_text
+
+    # Б4.3: внутренний API бота (/notify) для backend
+    internal_token: SecretStr | None = None
+    bot_api_port: int = 9000
 
     @field_validator("bot_admin_ids", mode="before")
     @classmethod

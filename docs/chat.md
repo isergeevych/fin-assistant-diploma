@@ -112,3 +112,35 @@ curl -X DELETE localhost:8000/chats/<chat_id>/messages
 | JSON: soft delete отдельной строкой | ✅ тест `test_full_chat_flow` |
 | Контрактные тесты на обе реализации | ✅ 12 / 12 |
 | `count_tokens` ±10 % от `usage.prompt_tokens` | ⏳ после ключа (у локальной модели другой токенизатор) |
+
+---
+
+# Мультимодальность (Б4.3)
+
+`POST /chats/{id}/messages` теперь `multipart/form-data`: `content` (обязательно) + `media` (опционально).
+URL тот же — отдельного `/messages/with-media` нет. Ответ — SSE JSON-событиями:
+`data: {"type":"token","delta":"…"}` … `data: {"type":"done"}` (ошибка — `{"type":"error",…}`).
+
+| Вложение | Что делает backend (`app/chat/media.py`) | Что видит модель |
+|---|---|---|
+| Фото (jpeg/png/webp, ≤ 5 МБ) | base64 → data-URI | `image_url`-part **в том же** вызове — отдельного Vision-вызова нет |
+| Голос (ogg/opus, m4a, mp3, wav) | Whisper-1 как есть, без FFmpeg | `text`: «[пользователь сказал голосом]: …» |
+| PDF (≤ 50 стр.) / DOCX | pypdf / python-docx (абзацы + таблицы), ≤ 30 000 символов | `text`: «[документ PDF]: …» |
+
+- Тип файла — **по сигнатуре байтов**, а не по присланному `content_type` (exe под видом png → 415).
+- `media_refs = {mime, size, filename, part}` сохраняется в сообщении; при сборке следующего контекста
+  мультимодальный content восстанавливается — модель снова «видит» фото.
+- Текст документов и расшифровки проверяется на **косвенную инъекцию** окнами по 4000 символов
+  (тест: PDF с «Ignore all previous instructions» → 400).
+- Без `OPENAI_API_KEY` голосовые отклоняются с 503 (Whisper есть только у OpenAI напрямую).
+
+**Проверка end-to-end (2026-10-12, gemma3:4b с vision через fallback):**
+фото чека → «134.90 руб.» (итог верный); PDF-выписка → «потрачено 6 620 рублей» (верно);
+уточнение «а сколько стоило молоко в том чеке?» **без повторной отправки фото** → «89.90 руб.» (верно —
+картинка восстановлена из истории); exe под видом png → HTTP 415.
+
+## Обратный канал backend → bot
+
+`POST /chats/{id}/system-message {text, notify}` (только с `X-Internal-Token`) дописывает сообщение в чат
+и, если `notify=true`, вызывает `POST http://bot:9000/notify` — бот шлёт уведомление в Telegram.
+Порт 9000 бота не пробрасывается на хост; без верного токена — 401 (сравнение `compare_digest`).

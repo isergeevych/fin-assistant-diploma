@@ -25,6 +25,9 @@ class ChatMessage(BaseModel):
     content: str
     tokens: int | None = None
     created_at: datetime = Field(default_factory=_now)
+    # Б4.3: вложение — {"mime", "size", "filename", "part"}; part — готовый content-part
+    # для Chat Completions, по нему мультимодальный контекст восстанавливается в следующих репликах.
+    media_refs: dict | None = None
 
 
 class Chat(BaseModel):

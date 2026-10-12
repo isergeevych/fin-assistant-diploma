@@ -22,6 +22,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # 2) Потом код (+ миграции: их применяет одноразовый сервис migrate в compose)
 COPY app ./app
+COPY bot ./bot
 COPY alembic ./alembic
 COPY alembic.ini ./
 

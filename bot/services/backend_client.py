@@ -1,13 +1,17 @@
 """
-BackendClient — тонкий async-клиент бота к chat-сервису (Б4.2).
+BackendClient — тонкий async-клиент бота к chat-сервису (Б4.2, расширен в Б4.3).
 
-Бот не знает про LLM и не хранит историю: всё это — в backend. Здесь только HTTP:
   get_or_create_chat — POST /chats с reuse_existing=true (идемпотентно);
-  send_message       — POST /chats/{id}/messages, разбор SSE-потока → текстовые куски;
+  send_message       — POST /chats/{id}/messages multipart (content + опциональный media),
+                       разбор SSE JSON-событий → текстовые дельты. ЕДИНСТВЕННЫЙ метод для текста,
+                       фото, голоса и документов;
   clear_messages     — DELETE /chats/{id}/messages.
 
-Ошибки httpx (ConnectError, ReadTimeout, HTTPStatusError) пробрасываются выше —
-в handlers их превращают в понятный текст (bot/handlers/errors.py).
+Устойчивость:
+- один httpx.AsyncClient на всё приложение (создаётся в bot/__main__.py);
+- таймауты: connect 3 с, read 60 с (для стрима — 120 с), write 10 с, pool 5 с;
+- retry (tenacity) ТОЛЬКО на сетевые ошибки соединения — не на 4xx/5xx: 5xx мог уже
+  стоить денег за LLM-вызов. Стрим, уже начавший отдавать данные, не ретраится никогда.
 """
 
 import json
@@ -15,6 +19,10 @@ from collections.abc import AsyncIterator
 from uuid import UUID
 
 import httpx
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+STREAM_TIMEOUT = httpx.Timeout(connect=3.0, read=120.0, write=10.0, pool=5.0)
+RETRYABLE = (httpx.ConnectError, httpx.ConnectTimeout)
 
 
 class BackendStreamError(Exception):
@@ -25,34 +33,64 @@ class BackendStreamError(Exception):
         self.code = code
 
 
+def _retrying() -> AsyncRetrying:
+    return AsyncRetrying(
+        retry=retry_if_exception_type(RETRYABLE),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=0.5, max=4),
+        reraise=True,
+    )
+
+
 class BackendClient:
     def __init__(self, http: httpx.AsyncClient):
-        # Один httpx.AsyncClient на всё приложение (пул соединений), создаётся в bot/__main__.py
         self.http = http
 
     async def get_or_create_chat(self, owner_external_id: str, interface: str = "telegram") -> UUID:
-        r = await self.http.post(
-            "/chats",
-            json={"owner_external_id": owner_external_id, "interface": interface, "reuse_existing": True},
-        )
+        async for attempt in _retrying():
+            with attempt:
+                r = await self.http.post(
+                    "/chats",
+                    json={"owner_external_id": owner_external_id, "interface": interface, "reuse_existing": True},
+                )
         r.raise_for_status()
         return UUID(r.json()["chat_id"])
 
-    async def send_message(self, chat_id: UUID, content: str) -> AsyncIterator[str]:
-        async with self.http.stream("POST", f"/chats/{chat_id}/messages", json={"content": content}) as r:
-            if r.status_code >= 400:
-                await r.aread()  # тело нужно, чтобы показать код ошибки
-                r.raise_for_status()
-            async for event in iter_sse_data(r.aiter_lines()):
-                if event == "[DONE]":
-                    return
-                if event.startswith('{"error"'):
-                    err = json.loads(event)["error"]
-                    raise BackendStreamError(err.get("code", "error"), err.get("message", ""))
-                yield event
+    async def send_message(
+        self, chat_id: UUID, content: str, media: bytes | None = None, mime: str | None = None,
+        filename: str = "file.bin",
+    ) -> AsyncIterator[str]:
+        # content передаём частью multipart (filename=None): без файла httpx иначе отправил бы
+        # application/x-www-form-urlencoded, а контракт эндпоинта — multipart/form-data всегда.
+        files: list = [("content", (None, content))]
+        if media:
+            files.append(("media", (filename, media, mime or "application/octet-stream")))
+        started = False
+        async for attempt in _retrying():
+            with attempt:
+                if started:  # данные уже пошли пользователю — повтор означал бы второй платный ответ
+                    raise RuntimeError("stream already started")
+                async with self.http.stream(
+                    "POST", f"/chats/{chat_id}/messages", files=files, timeout=STREAM_TIMEOUT,
+                ) as r:
+                    if r.status_code >= 400:
+                        await r.aread()
+                        r.raise_for_status()
+                    async for event in iter_sse_data(r.aiter_lines()):
+                        payload = json.loads(event)
+                        kind = payload.get("type")
+                        if kind == "token":
+                            started = True
+                            yield payload["delta"]
+                        elif kind == "error":
+                            raise BackendStreamError(payload.get("code", "error"), payload.get("message", ""))
+                        elif kind == "done":
+                            return
 
     async def clear_messages(self, chat_id: UUID) -> None:
-        r = await self.http.delete(f"/chats/{chat_id}/messages")
+        async for attempt in _retrying():
+            with attempt:
+                r = await self.http.delete(f"/chats/{chat_id}/messages")
         r.raise_for_status()
 
 
@@ -69,6 +107,5 @@ async def iter_sse_data(lines: AsyncIterator[str]) -> AsyncIterator[str]:
         if line.startswith("data:"):
             value = line[5:]
             buffer.append(value[1:] if value.startswith(" ") else value)
-        # строки event:/id:/комментарии ":" в этом протоколе не используются
     if buffer:
         yield "\n".join(buffer)
