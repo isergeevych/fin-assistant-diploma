@@ -1,0 +1,33 @@
+{
+  "label": "baseline",
+  "timestamp": "2026-10-12_2302",
+  "items": 37,
+  "golden_version": 1,
+  "metrics": {
+    "faithfulness": 0.922,
+    "answer_relevancy": 0.726,
+    "context_precision": 0.946,
+    "context_recall": 0.973,
+    "has_citation": 1.0
+  },
+  "metric_errors": {
+    "faithfulness": 0,
+    "answer_relevancy": 0,
+    "context_precision": 0,
+    "context_recall": 0,
+    "has_citation": 0
+  },
+  "latency_ms_avg": 6113.0,
+  "config": {
+    "llm": "openai/gpt-5.4-mini",
+    "judge": "google/gemini-3.8-flash",
+    "embeddings": "qwen3-embedding:0.6b",
+    "chunk_strategy": "recursive",
+    "chunk_size": 512,
+    "chunk_overlap": 64,
+    "retrieval_top_k": 10,
+    "rerank": true,
+    "rerank_top_n": 5,
+    "collection": "knowledge_base"
+  }
+}
