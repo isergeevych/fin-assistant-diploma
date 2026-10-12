@@ -86,6 +86,21 @@ class Settings(BaseSettings):
     moderation_enabled: bool = True
     admin_token: SecretStr | None = None  # X-Admin-Token для /chats/admin/*; без него admin-API выключен
 
+    # --- Эмбеддинги (Б5.1) ---
+    # OpenAI-совместимый /v1/embeddings: локально — Ollama (GPU, без ключа), в проде — OpenRouter
+    # (там есть та же baai/bge-m3 — смена провайдера = смена base_url, векторы того же семейства).
+    embedding_base_url: str = "http://localhost:11434/v1"
+    embedding_api_key: SecretStr = SecretStr("ollama")
+    embedding_model: str = "qwen3-embedding:0.6b"  # выбор по mini-benchmark — docs/embeddings.md
+    embedding_dim: int = 1024
+    # Асимметричная модель: к ЗАПРОСУ добавляется инструкция, документы — как есть.
+    # На mini-benchmark минимальный зазор rel−irr вырос с +0.036 до +0.099.
+    embedding_query_instruction: str = (
+        "Instruct: Given a user question about personal finance, retrieve the passage that answers it\nQuery: "
+    )
+    embedding_batch_size: int = 64
+    embedding_cache_dir: Path = PROJECT_ROOT / "var" / "embeddings_cache"
+
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True

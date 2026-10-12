@@ -1,0 +1,73 @@
+{
+  "results": [
+    {
+      "name": "bge-m3 (Ollama)",
+      "model": "bge-m3",
+      "dim": 1024,
+      "correct": 8,
+      "total": 8,
+      "mean_margin": 0.128,
+      "min_margin": 0.0228,
+      "mean_rel": 0.621,
+      "ms_per_text": 686.3,
+      "per_pair": [
+        0.208,
+        0.047,
+        0.023,
+        0.129,
+        0.079,
+        0.048,
+        0.316,
+        0.174
+      ]
+    },
+    {
+      "name": "qwen3-embedding 0.6B (Ollama)",
+      "model": "qwen3-embedding:0.6b",
+      "dim": 1024,
+      "correct": 8,
+      "total": 8,
+      "mean_margin": 0.2018,
+      "min_margin": 0.0363,
+      "mean_rel": 0.6162,
+      "ms_per_text": 131.0,
+      "per_pair": [
+        0.266,
+        0.036,
+        0.163,
+        0.183,
+        0.154,
+        0.136,
+        0.495,
+        0.18
+      ]
+    },
+    {
+      "name": "nomic-embed-text (Ollama, EN)",
+      "model": "nomic-embed-text",
+      "dim": 768,
+      "correct": 7,
+      "total": 8,
+      "mean_margin": 0.0582,
+      "min_margin": -0.0168,
+      "mean_rel": 0.7851,
+      "ms_per_text": 144.2,
+      "per_pair": [
+        0.031,
+        0.015,
+        -0.017,
+        0.015,
+        0.081,
+        0.055,
+        0.207,
+        0.078
+      ]
+    }
+  ],
+  "avg_chunk_tokens_sample": 103.25,
+  "indexing_cost_rows": [
+    "| openai/text-embedding-3-small | 42 000 | $0.0008 |",
+    "| baai/bge-m3 | 42 000 | $0.0004 |",
+    "| openai/text-embedding-3-large | 42 000 | $0.0055 |"
+  ]
+}
