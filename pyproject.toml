@@ -1,0 +1,27 @@
+[project]
+name = "fin-assistant"
+version = "0.1.0"
+description = "Финпомощник — AI-ассистент для анализа личных доходов и расходов (дипломный проект курса «ИИ-разработчик: от API до агентов»)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "openai>=2.0",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "jinja2>=3.1",
+    "jsonschema>=4.22",
+    "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = ["llm: тесты, которые ходят в настоящий LLM API (нужен ключ)"]
+
+[tool.uv]
+package = false
