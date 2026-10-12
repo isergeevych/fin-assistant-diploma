@@ -54,6 +54,8 @@ async def main_async(args) -> None:
 
         await asyncio.to_thread(run_ingestion, [settings.data_dir], settings)
     await asyncio.to_thread(rag.build)
+    # прогрев: первая загрузка re-ranker занимает ~200 с и испортила бы среднюю latency
+    await asyncio.to_thread(rag.retrieve, "прогрев")
     judge, judge_model = build_judge(settings)
     metrics = build_metrics(judge, build_embeddings(settings))
     sem = asyncio.Semaphore(args.concurrency)
@@ -101,7 +103,8 @@ def main() -> None:
     parser.add_argument("--top-k", type=int)
     parser.add_argument("--no-rerank", action="store_true")
     parser.add_argument("--limit", type=int)
-    parser.add_argument("--concurrency", type=int, default=1)  # локальная GPU: по одному (BSOD при параллели, GUIDE #35)
+    # облачный судья — 4; если RAG-LLM или судья на локальной GPU — только 1 (BSOD при параллели, GUIDE #35)
+    parser.add_argument("--concurrency", type=int, default=4)
     asyncio.run(main_async(parser.parse_args()))
 
 

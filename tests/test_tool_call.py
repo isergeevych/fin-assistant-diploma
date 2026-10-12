@@ -93,6 +93,30 @@ async def test_exchange_rate_parses_cbr_xml_with_nominal(settings):
     assert cny["rub_per_unit"] == 11.25  # номинал 10 юаней → курс за 1 юань
 
 
+async def test_exchange_rate_falls_back_to_mirror_when_cbr_unreachable(settings):
+    seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.host + request.url.path)
+        if request.url.host == "www.cbr.ru":
+            raise httpx.ConnectTimeout("cbr.ru не отвечает с зарубежного IP", request=request)
+        return httpx.Response(200, content=CBR_XML)
+
+    ctx = ToolContext(owner_external_id="tg:A", settings=settings, http_transport=httpx.MockTransport(handler))
+    eur = await execute_tool("get_exchange_rate", '{"currency": "EUR", "date": "2026-10-09"}', ctx)
+    assert eur["rub_per_unit"] == 93.4 and "зеркало" in eur["source"]
+    assert seen[-1] == "www.cbr-xml-daily.ru/archive/2026/10/09/daily.xml"  # дата → архив зеркала
+
+
+async def test_exchange_rate_both_sources_down_is_error_for_model(settings):
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("сети нет", request=request)
+
+    ctx = ToolContext(owner_external_id="tg:A", settings=settings, http_transport=httpx.MockTransport(handler))
+    result = await execute_tool("get_exchange_rate", '{"currency": "EUR", "date": null}', ctx)
+    assert result == {"error": "внешний сервис недоступен: ConnectError"}
+
+
 async def test_unknown_tool_and_bad_json_do_not_raise(settings):
     ctx = ToolContext(owner_external_id="tg:A", settings=settings)
     assert "error" in await execute_tool("delete_all_data", "{}", ctx)

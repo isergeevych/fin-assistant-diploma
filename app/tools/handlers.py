@@ -65,9 +65,22 @@ async def get_spending_summary(args: SpendingSummaryArgs, ctx: ToolContext) -> d
 
 async def get_exchange_rate(args: ExchangeRateArgs, ctx: ToolContext) -> dict:
     params = {"date_req": args.date.strftime("%d/%m/%Y")} if args.date else {}
+    source = "ЦБ РФ"
     async with httpx.AsyncClient(timeout=10, transport=ctx.http_transport) as http:
-        response = await http.get(ctx.settings.cbr_daily_url, params=params)
-        response.raise_for_status()
+        try:
+            response = await http.get(ctx.settings.cbr_daily_url, params=params)
+            response.raise_for_status()
+        except httpx.HTTPError:
+            # cbr.ru не отвечает с зарубежных IP (поймано на VPN): зеркало отдаёт тот же XML ЦБ.
+            # Ошибка зеркала уходит наверх → execute_tool вернёт модели «сервис недоступен».
+            if not ctx.settings.cbr_mirror_url:
+                raise
+            day = args.date or date.today()
+            url = ctx.settings.cbr_mirror_url if not args.date else ctx.settings.cbr_mirror_archive_url.format(
+                y=day.year, m=f"{day.month:02d}", d=f"{day.day:02d}")
+            response = await http.get(url)
+            response.raise_for_status()
+            source = "ЦБ РФ (зеркало cbr-xml-daily.ru)"
     # Ответ ЦБ — XML в windows-1251; ElementTree читает кодировку из пролога.
     root = ET.fromstring(response.content)
     for valute in root.iter("Valute"):
@@ -79,7 +92,7 @@ async def get_exchange_rate(args: ExchangeRateArgs, ctx: ToolContext) -> dict:
                 "name": valute.findtext("Name"),
                 "rub_per_unit": float(round(value / nominal, 4)),
                 "rate_date": _cbr_date(root.get("Date")),
-                "source": "ЦБ РФ",
+                "source": source,
             }
     return {"error": f"ЦБ РФ не публикует курс валюты {args.currency}"}
 

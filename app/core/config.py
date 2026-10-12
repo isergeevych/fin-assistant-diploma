@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     transactions_csv: Path = PROJECT_ROOT / "data" / "finance" / "transactions.csv"
     # Внешний API: официальные курсы ЦБ РФ (ключ не нужен)
     cbr_daily_url: str = "https://www.cbr.ru/scripts/XML_daily.asp"
+    # Резерв: cbr.ru не отвечает с зарубежных IP. Зеркало публикует тот же XML ЦБ (неофициальное — в ответе
+    # tool помечается source). Пусто — без резерва.
+    cbr_mirror_url: str | None = "https://www.cbr-xml-daily.ru/daily.xml"
+    cbr_mirror_archive_url: str = "https://www.cbr-xml-daily.ru/archive/{y}/{m}/{d}/daily.xml"
 
     log_dir: Path = PROJECT_ROOT / "logs"
 
