@@ -72,6 +72,7 @@ def get_incident_sink(session: OptionalSessionDep) -> IncidentSink | None:
 
 
 def get_chat_service(
+    request: Request,
     repo: Annotated[ChatRepository, Depends(get_repository)],
     llm: LLMClientDep,
     settings: SettingsDep,
@@ -84,7 +85,8 @@ def get_chat_service(
         render_template("chat_system_v1.j2", product_name=settings.product_name),
         canary,
     )
-    return ChatService(repo, llm, settings, guard, moderation, sink)
+    rag = getattr(request.app.state, "rag", None) if settings.chat_use_rag else None
+    return ChatService(repo, llm, settings, guard, moderation, sink, rag=rag)
 
 
 ChatServiceDep = Annotated[ChatService, Depends(get_chat_service)]

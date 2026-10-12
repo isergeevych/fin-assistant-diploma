@@ -109,9 +109,14 @@ class Settings(BaseSettings):
 
     # --- RAG (Б5.3) ---
     rag_enabled: bool = True
-    rag_data_dir: Path = PROJECT_ROOT / "data" / "rag-block-03"
-    rag_collection: str = "rag_block_03"            # LlamaIndex (формат нод _node_content)
+    chat_use_rag: bool = True  # Б5.5: /chats/{id}/messages отвечает с опорой на базу знаний
+    rag_data_dir: Path = PROJECT_ROOT / "data" / "rag-block-03"  # Б5.3: 10 документов
+    rag_collection: str = "knowledge_base"          # Б5.5: вся база (LlamaIndex-формат нод _node_content)
     rag_collection_bare: str = "rag_block_03_bare"  # bare-metal (плоский payload)
+    docstore_dir: Path = PROJECT_ROOT / "var" / "docstore"  # хеши документов для UPSERTS (повторный ingest)
+    rag_condense_enabled: bool = True   # переписывать follow-up («а для них?») в самостоятельный вопрос для поиска
+    rag_confident_score: float = 0.5    # флаг confident в ответе
+    rag_rerank_threshold: float = 0.1   # score-guard по re-ranker (если он работал) — калибровка в docs/rag.md
     # Итог Б5.4 (docs/chunking_experiment.md): recursive (SentenceSplitter), 512/64, retrieval top-10 → rerank top-5
     rag_chunk_strategy: Literal["fixed", "recursive", "semantic"] = "recursive"
     rag_chunk_size: int = 512
@@ -125,6 +130,9 @@ class Settings(BaseSettings):
     rag_llm_base_url: str | None = None
     rag_llm_model: str | None = None
     rag_llm_api_key: SecretStr | None = None
+    # Reasoning-модели (qwen3, gpt-5.x) тратят токены на «размышления»: на condense qwen3 съедала весь лимит
+    # и возвращала пустой ответ. "none" — без размышлений (Ollama: 2.5 с вместо обрыва); пусто — не передавать.
+    rag_llm_reasoning_effort: str | None = "none"
 
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.

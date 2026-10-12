@@ -29,6 +29,7 @@ from app.core.config import Settings
 from app.core.exceptions import LLMError, ModerationBlockedError, OutputBlockedError
 from app.moderation.service import ModerationResult, ModerationService
 from app.observability.pii import prompt_hash
+from app.prompts.loader import render_template
 from app.services.llm_client import AsyncLLMClient
 from app.services.security.guard import SecurityGuard
 
@@ -55,8 +56,11 @@ class ResponseReplaced(LLMError):
 
 class ChatService:
     def __init__(self, repository: ChatRepository, llm: AsyncLLMClient, settings: Settings, guard: SecurityGuard,
-                 moderation: ModerationService | None = None, incident_sink: IncidentSink | None = None):
+                 moderation: ModerationService | None = None, incident_sink: IncidentSink | None = None,
+                 rag=None):
         self.repo = repository
+        self.rag = rag  # RAGService (Б5.5) или None — тогда чат без базы знаний
+        self.last_sources: list[dict] = []
         self.llm = llm
         self.settings = settings
         self.guard = guard
@@ -130,6 +134,9 @@ class ChatService:
         history = await self.repo.list_messages(chat_id, limit=self.settings.chat_context_window)
         messages = self.build_messages(chat, history)
         system_prompt = messages[0]["content"]
+        self.last_sources = []
+        if self.rag is not None:  # Б5.5: диалоговый RAG поверх истории из М4
+            messages = await self._with_knowledge(messages, user_content)
         log.info("chat.context_built", chat_id=str(chat_id), messages=len(messages),
                  prompt_tokens_estimate=count_tokens(messages), prompt_hash=prompt_hash(user_content))
 
@@ -170,13 +177,35 @@ class ChatService:
                         id=assistant_id, chat_id=chat_id, role="assistant",
                         content=MODERATED_REPLY if replaced else answer,
                         tokens=usage.get("completion_tokens") or count_text_tokens(answer),
-                        latency_ms=round((time.perf_counter() - started) * 1000)))
+                        latency_ms=round((time.perf_counter() - started) * 1000),
+                        # показанные источники — для фидбека и разбора ответов (Б5.5)
+                        media_refs={"sources": self.last_sources} if self.last_sources else None))
             if not completed:
                 log.warning("chat.stream_interrupted", chat_id=str(chat_id),
                             saved_chars=len(answer) if not blocked else 0, blocked=blocked)
             else:
                 log.info("chat.message_completed", chat_id=str(chat_id), usage=final.get("usage"),
                          moderated=replaced)
+
+    async def _with_knowledge(self, messages: list[dict], question: str) -> list[dict]:
+        """Поиск по базе (condense по истории → retrieve → re-rank → guard) и системное сообщение с
+        пронумерованными фрагментами. История уходит в LLM целиком — condense нужен только поиску."""
+        dialog = [{"role": m["role"], "content": m["content"]} for m in messages[:-1]
+                  if m["role"] in ("user", "assistant") and isinstance(m["content"], str)]
+        try:
+            search_query = await anyio.to_thread.run_sync(self.rag.condense, question, dialog)
+            chunks, top_score = await anyio.to_thread.run_sync(self.rag.retrieve, search_query)
+        except Exception as e:  # noqa: BLE001 — база знаний недоступна: отвечаем без неё, а не падаем
+            log.warning("chat.rag_unavailable", error=type(e).__name__)
+            return messages
+        found = self.rag.passes_guard(chunks, top_score)
+        log.info("chat.rag", top_score=round(top_score, 3), found=found, chunks=len(chunks) if found else 0)
+        if found:
+            self.last_sources = self.rag.sources_payload(chunks)
+        context = render_template("rag_context.j2", chunks=chunks if found else [])
+        system = [m for m in messages if m["role"] == "system"]
+        rest = [m for m in messages if m["role"] != "system"]
+        return [*system, {"role": "system", "content": context}, *rest]
 
     async def list_messages(self, chat_id: UUID, limit: int = 50) -> list[ChatMessage]:
         await self.get_chat(chat_id)

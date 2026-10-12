@@ -39,7 +39,8 @@ def code_lines(path: Path, functions: set[str]) -> int:
 
 def main() -> None:
     s = get_settings()
-    impls = {"LlamaIndex": RAGService(s).build(reindex=True), "bare-metal": BareMetalRAG(s).build(reindex=True)}
+    impls = {"LlamaIndex": RAGService(s, collection="rag_block_03", data_dir=s.rag_data_dir).build(reindex=True),
+             "bare-metal": BareMetalRAG(s).build(reindex=True)}
     out = ["# Прогон 5 вопросов: сырые ответы (scripts/rag_compare.py)\n",
            f"LLM: `{s.rag_llm_model or s.llm.default_model}`, эмбеддинги: `{s.embedding_model}`, "
            f"top_k={s.rag_top_k}, порог score={s.rag_score_threshold}\n"]

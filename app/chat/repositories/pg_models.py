@@ -69,6 +69,7 @@ class MessageFeedbackRow(Base):
     owner_external_id: Mapped[str] = mapped_column(Text, nullable=False)
     value: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    shown_sources: Mapped[list | None] = mapped_column(JSONB)  # Б5.5: какие источники видел пользователь
 
     __table_args__ = (
         UniqueConstraint("owner_external_id", "message_id", name="uq_feedback_owner_message"),

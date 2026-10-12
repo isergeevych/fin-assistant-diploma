@@ -15,6 +15,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery
 
 from bot.handlers.errors import user_message_for
+from bot.services import shown_sources
 from bot.services.backend_client import BackendClient
 
 router = Router(name="feedback")
@@ -40,7 +41,7 @@ async def on_feedback(callback: CallbackQuery, backend: BackendClient) -> None:
     vote, message_id = parsed
     try:
         chat_id = await backend.get_or_create_chat(str(callback.message.chat.id))
-        await backend.send_feedback(chat_id, message_id, vote)
+        await backend.send_feedback(chat_id, message_id, vote, shown_sources.recall(str(message_id)))
     except httpx.HTTPError as e:
         await callback.answer(user_message_for(e), show_alert=True)
         return

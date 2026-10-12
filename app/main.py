@@ -29,7 +29,7 @@ from app.core.config import get_settings
 from app.core.exceptions import LLMError
 from app.observability.logging import setup_logging
 from app.observability.tracing import setup_tracing
-from app.routers import chat, health, models, rag
+from app.routers import chat, documents, health, models, rag
 from app.services.llm_client import AsyncLLMClient
 
 # request_id от клиента принимаем только «безопасной» формы — иначе через заголовок
@@ -143,6 +143,7 @@ app.include_router(health.router)
 app.include_router(models.router)
 app.include_router(chat.router)
 app.include_router(rag.router)
+app.include_router(documents.router)
 # admin — РАНЬШЕ чат-роутера: иначе /chats/admin/* совпало бы с /chats/{chat_id}
 app.include_router(admin_routes.router)
 app.include_router(admin_routes.internal)

@@ -31,6 +31,9 @@ FROM python:3.12-slim-bookworm AS runtime
 
 RUN useradd --create-home --uid 1000 appuser
 COPY --from=builder --chown=appuser:appuser /app /app
+# Каталог под named volume (docstore, кеш эмбеддингов): пустой том инициализируется из образа вместе с
+# владельцем — иначе он создаётся root'ом, и non-root процесс не может в него писать (поймано в Б5.5).
+RUN mkdir -p /app/var && chown appuser:appuser /app/var
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \

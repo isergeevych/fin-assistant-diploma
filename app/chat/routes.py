@@ -31,7 +31,7 @@ from app.chat.feedback import FeedbackError, save_feedback
 from app.chat.media import MediaError, media_to_part
 from app.chat.service import ResponseReplaced
 from app.core.exceptions import LLMError, ModerationBlockedError
-from app.core.sse import sse_event
+from app.core.sse import sse_event, sse_json
 from app.deps.auth import require_internal
 from app.deps.providers import SettingsDep
 from app.schemas.chat import ErrorResponse
@@ -56,6 +56,7 @@ class CreateChatOut(BaseModel):
 
 class FeedbackIn(BaseModel):
     value: Literal["up", "down"]
+    sources: list[str] | None = Field(default=None, max_length=20, description="Показанные источники (имена файлов)")
 
 
 class SystemMessageIn(BaseModel):
@@ -123,6 +124,8 @@ async def send_message(
         except LLMError as e:
             log.warning("chat.stream_error", code=e.code)
             yield sse_event("error", code=e.code, message=e.message)
+        if service.last_sources:  # Б5.5: источники — финальным событием, после текста
+            yield sse_json({"type": "sources", "sources": service.last_sources}, event="sources")
         message_id = getattr(service, "last_assistant_message_id", None)  # для кнопок 👍/👎 в боте
         yield sse_event("done", message_id=str(message_id) if message_id else None)
 
@@ -150,7 +153,7 @@ async def clear_messages(chat_id: UUID, service: ChatServiceDep) -> dict:
 )
 async def message_feedback(chat_id: UUID, message_id: UUID, body: FeedbackIn, session: DbSessionDep) -> dict:
     try:
-        await save_feedback(session, chat_id, message_id, body.value)
+        await save_feedback(session, chat_id, message_id, body.value, body.sources)
     except FeedbackError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     return {"status": "ok"}

@@ -83,6 +83,9 @@ class BackendClient:
                         if kind == "token":
                             started = True
                             yield payload["delta"]
+                        elif kind == "sources":  # Б5.5: показанные источники — для фидбека
+                            if meta is not None:
+                                meta["sources"] = payload.get("sources", [])
                         elif kind == "replace":  # Б4.4: модерация вывода — показанный текст заменить
                             raise BackendStreamError("moderation_output", payload.get("text", ""))
                         elif kind == "error":
@@ -92,8 +95,9 @@ class BackendClient:
                                 meta["message_id"] = payload.get("message_id")
                             return
 
-    async def send_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
-        r = await self.http.post(f"/chats/{chat_id}/messages/{message_id}/feedback", json={"value": value})
+    async def send_feedback(self, chat_id: UUID, message_id: UUID, value: str, sources: list[str] | None = None) -> None:
+        r = await self.http.post(f"/chats/{chat_id}/messages/{message_id}/feedback",
+                                 json={"value": value, "sources": sources})
         r.raise_for_status()
 
     # ---------- Б4.4: admin и рассылки ----------
