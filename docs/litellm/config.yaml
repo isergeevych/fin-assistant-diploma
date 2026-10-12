@@ -1,0 +1,37 @@
+# LiteLLM proxy — эксперимент Б3.2: primary → fallback → локальная модель.
+# Запуск (из корня репозитория, без Docker):
+#   pip install 'litellm[proxy]'
+#   litellm --config docs/litellm/config.yaml --port 4000
+# Ключи читаются из окружения (os.environ/...), в файле их нет.
+
+model_list:
+  - model_name: primary                       # то, что запрашивает клиент
+    litellm_params:
+      model: openrouter/openai/gpt-5.4-mini
+      api_key: os.environ/LITELLM_PRIMARY_KEY # в эксперименте подменяем на неверный ключ, чтобы «уронить» primary
+
+  - model_name: fallback
+    litellm_params:
+      model: openrouter/anthropic/claude-haiku-4.5
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: local
+    litellm_params:
+      model: ollama_chat/gemma3:4b   # без режима рассуждений (у qwen3 ответ уходил в reasoning, content пустой)
+      api_base: http://localhost:11434
+
+router_settings:
+  # Порядок fallback: primary → fallback → local (как в ADR-002)
+  fallbacks:
+    - primary: ["fallback", "local"]
+  num_retries: 2          # ретраи внутри одной модели (429/5xx)
+  timeout: 60
+  allowed_fails: 3        # аналог circuit breaker: после 3 ошибок модель «остывает»
+  cooldown_time: 60
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY   # без него proxy не стартует: иначе любой в сети пользовался бы нашими ключами
+
+litellm_settings:
+  drop_params: true       # не падать на параметрах, которые модель не поддерживает (например temperature у gpt-5.4-mini)
+  set_verbose: false
