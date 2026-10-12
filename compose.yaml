@@ -1,0 +1,48 @@
+# Весь стек одной командой:
+#   cp .env.example .env   # заполнить ключи
+#   docker compose up -d --build
+#
+# APP_PORT — порт на хосте (по умолчанию 8000; на машине разработчика 8000 занят
+# другим проектом, поэтому там APP_PORT=8010 в .env).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: llm-service:v1
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file: .env
+    environment:
+      # redis — DNS-имя сервиса в compose-сети, не localhost
+      REDIS_URL: redis://redis:6379/0
+      # Локальная модель (tertiary fallback) живёт на хосте, а не в контейнере
+      LLM__LOCAL_BASE_URL: ${LLM_LOCAL_BASE_URL_DOCKER:-http://host.docker.internal:11434/v1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    # Без ports: Redis доступен только app по внутренней сети, на хост не торчит
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  redis_data: {}

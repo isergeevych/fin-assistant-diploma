@@ -1,0 +1,37 @@
+# VCS и CI
+.git
+.gitignore
+.github/
+
+# Окружения и кеши
+.venv/
+venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Секреты — никогда не попадают в образ
+.env
+.env.*
+!.env.example
+
+# Не нужно в рантайме
+tests/
+notebooks/
+data/
+logs/
+var/
+docs/
+examples/
+scripts/
+eval/
+experiments/
+*.md
+!README.md
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
