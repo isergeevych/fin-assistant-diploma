@@ -40,7 +40,23 @@ curl http://localhost:4000/v1/chat/completions \
 
 ## Прогон 2 — primary работает / primary отказал → fallback (с реальным ключом)
 
-_Будет добавлен после получения ключа OpenRouter._
+LiteLLM 1.105.0, ключ OpenRouter настоящий, local (`gemma3:4b`) не понадобился. Запрос — «Сколько будет 2+2?».
+
+| Сценарий | Запрос | `x-litellm-model-group` | ответила модель | `attempted-retries` | `attempted-fallbacks` | Время |
+|---|---|---|---|---|---|---|
+| (а) primary работает | 1-й | `primary` | `gpt-5.4-mini` | 0 | 0 | 4,79 с (холодный старт proxy) |
+| (а) primary работает | 2-й | `primary` | `gpt-5.4-mini` | 0 | 0 | 0,75 с |
+| (б) у primary неверный ключ | 1-й | `fallback` | `anthropic/claude-haiku-4.5` | 0 | 1 | 1,66 с |
+| (б) у primary неверный ключ | 2-й | `fallback` | `anthropic/claude-haiku-4.5` | 0 | 1 | 3,09 с |
+
+Наблюдения:
+- Fallback прозрачен для клиента: он запрашивал `primary`, получил 200 и ответ; о подмене модели знает только
+  по заголовкам. Для диплома это аргумент логировать фактическую модель ответа (у нас — поле `model` в
+  `llm.call`), иначе при разборе инцидента не понять, кто отвечал.
+- 401 у primary не ретраится (`attempted-retries: 0`) — сразу fallback, как и в нашем `AsyncLLMClient`.
+- Цена fallback — лишний сетевой круг до OpenRouter: +0,9–2,3 с к ответу по сравнению с прогретым primary.
+- `allowed_fails: 3` за 2 запроса не сработал — primary пробуется каждый раз; при настоящей аварии первые
+  3 запроса оплачивают задержку, дальше модель «остывает» на `cooldown_time` (аналог circuit breaker).
 
 ## Вывод
 
