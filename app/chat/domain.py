@@ -28,6 +28,7 @@ class ChatMessage(BaseModel):
     # Б4.3: вложение — {"mime", "size", "filename", "part"}; part — готовый content-part
     # для Chat Completions, по нему мультимодальный контекст восстанавливается в следующих репликах.
     media_refs: dict | None = None
+    latency_ms: int | None = None  # Б4.4: для ответов ассистента
 
 
 class Chat(BaseModel):

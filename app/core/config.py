@@ -82,6 +82,10 @@ class Settings(BaseSettings):
     internal_token: SecretStr | None = None  # общий секрет app ↔ bot для /notify и системных эндпоинтов
     bot_api_port: int = 9000
 
+    # --- Production-обвязка (Б4.4) ---
+    moderation_enabled: bool = True
+    admin_token: SecretStr | None = None  # X-Admin-Token для /chats/admin/*; без него admin-API выключен
+
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True

@@ -24,6 +24,10 @@ class BotSettings(BaseSettings):
     internal_token: SecretStr | None = None
     bot_api_port: int = 9000
 
+    # Б4.4: admin-команды бота ходят в /chats/admin/* с этим токеном
+    admin_token: SecretStr | None = None
+    broadcast_poll_sec: float = 15.0
+
     @field_validator("bot_admin_ids", mode="before")
     @classmethod
     def parse_ids(cls, v):

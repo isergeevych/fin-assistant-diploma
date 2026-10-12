@@ -21,6 +21,7 @@ from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from app.admin import routes as admin_routes
 from app.chat import routes as chat_routes
 from app.chat.service import ChatNotFoundError
 from app.core.config import get_settings
@@ -130,4 +131,7 @@ async def chat_not_found_handler(request: Request, exc: ChatNotFoundError) -> JS
 app.include_router(health.router)
 app.include_router(models.router)
 app.include_router(chat.router)
+# admin — РАНЬШЕ чат-роутера: иначе /chats/admin/* совпало бы с /chats/{chat_id}
+app.include_router(admin_routes.router)
+app.include_router(admin_routes.internal)
 app.include_router(chat_routes.router)

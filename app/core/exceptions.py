@@ -43,6 +43,17 @@ class OutputBlockedError(LLMError):
     http_status = 502
 
 
+class ModerationBlockedError(LLMError):
+    """Б4.4: ввод нарушает правила контента (мошенничество, оскорбления…) → 403."""
+
+    code = "moderation_blocked"
+    http_status = 403
+
+    def __init__(self, categories: list[str]):
+        super().__init__("Сообщение нарушает правила сервиса")
+        self.categories = categories
+
+
 class LLMUnavailableError(LLMError):
     """Все провайдеры цепочки недоступны (или их circuit breaker открыт)."""
 

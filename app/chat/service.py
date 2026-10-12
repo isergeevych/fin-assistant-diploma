@@ -2,18 +2,22 @@
 ChatService — stateful-чат (Б4.1): история живёт на сервере, клиент присылает
 только новое сообщение.
 
-send_message(chat_id, text):
-  1. проверка ввода (SecurityGuard, как у /chat);
-  2. сохранить user-сообщение;
+send_message(chat_id, text, media):
+  1. проверки до LLM: фильтр атак (SecurityGuard, Б3.8) и модерация контента (Б4.4) —
+     вызываются из роутера ДО начала стрима, чтобы отказ пришёл честным HTTP-кодом;
+  2. сохранить user-сообщение (+ media_refs, Б4.3);
   3. загрузить чат и последние N сообщений;
   4. собрать контекст: system-промпт (+ canary) + окно истории, урезать по токен-бюджету;
   5. стрим ответа модели через фильтр вывода — токены отдаются по мере генерации;
-  6. по завершении сохранить ответ ОДНИМ append_message. Если стрим оборвался —
-     сохраняется накопленное (с пометкой в логе), чтобы история не теряла реплику.
+  6. модерация финального ответа: нарушение → в историю пишется отказ, клиент получает
+     событие «замени текст» (ResponseReplaced);
+  7. ответ сохраняется ОДНИМ append_message с заранее известным id (нужен для 👍/👎).
+     Если стрим оборвался — сохраняется накопленное (с пометкой в логе).
 """
 
-from collections.abc import AsyncIterator
-from uuid import UUID
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
+from uuid import UUID, uuid4
 
 import anyio
 import structlog
@@ -22,24 +26,42 @@ from app.chat.context import count_text_tokens, count_tokens, fit_to_budget, sli
 from app.chat.domain import Chat, ChatMessage
 from app.chat.repository import ChatRepository
 from app.core.config import Settings
-from app.core.exceptions import OutputBlockedError
+from app.core.exceptions import LLMError, ModerationBlockedError, OutputBlockedError
+from app.moderation.service import ModerationResult, ModerationService
 from app.observability.pii import prompt_hash
 from app.services.llm_client import AsyncLLMClient
 from app.services.security.guard import SecurityGuard
 
 log = structlog.get_logger("chat.service")
 
+MODERATED_REPLY = "Не могу показать ответ — он мог нарушить правила."
+IncidentSink = Callable[[str, str, ModerationResult, str], Awaitable[None]]
+
 
 class ChatNotFoundError(LookupError):
     pass
 
 
+class ResponseReplaced(LLMError):
+    """Ответ модели не прошёл модерацию вывода: клиент должен заменить показанный текст."""
+
+    code = "moderation_output"
+    http_status = 200
+
+    def __init__(self, replacement: str):
+        super().__init__(replacement)
+        self.replacement = replacement
+
+
 class ChatService:
-    def __init__(self, repository: ChatRepository, llm: AsyncLLMClient, settings: Settings, guard: SecurityGuard):
+    def __init__(self, repository: ChatRepository, llm: AsyncLLMClient, settings: Settings, guard: SecurityGuard,
+                 moderation: ModerationService | None = None, incident_sink: IncidentSink | None = None):
         self.repo = repository
         self.llm = llm
         self.settings = settings
         self.guard = guard
+        self.moderation = moderation
+        self.incident_sink = incident_sink
 
     @property
     def token_budget(self) -> int:
@@ -68,6 +90,8 @@ class ChatService:
         window = sliding_window(history, self.settings.chat_context_window)
         return fit_to_budget(system + window, self.token_budget)
 
+    # ---------- проверки до LLM ----------
+
     def check_input(self, content: str) -> None:
         self.guard.check([("user", content)])
 
@@ -75,6 +99,21 @@ class ChatService:
         """Текст из документа/голоса — недоверенные данные: проверка на косвенную инъекцию."""
         if part.get("type") == "text":
             self.guard.check_document(part.get("text", ""))
+
+    async def moderate_input(self, chat: Chat, text: str) -> None:
+        if self.moderation is None:
+            return
+        result = await self.moderation.check_input(text)
+        if not result.allowed:
+            await self._record_incident(chat.owner_external_id, "input", result, text)
+            raise ModerationBlockedError(result.categories)
+
+    async def _record_incident(self, owner: str, direction: str, result: ModerationResult, text: str) -> None:
+        if self.incident_sink is not None:
+            with anyio.CancelScope(shield=True):
+                await self.incident_sink(owner, direction, result, text)
+
+    # ---------- основной поток ----------
 
     async def send_message(self, chat_id: UUID, user_content: str,
                            media_part: dict | None = None, media_meta: dict | None = None) -> AsyncIterator[str]:
@@ -94,7 +133,9 @@ class ChatService:
         log.info("chat.context_built", chat_id=str(chat_id), messages=len(messages),
                  prompt_tokens_estimate=count_tokens(messages), prompt_hash=prompt_hash(user_content))
 
+        self.last_assistant_message_id = assistant_id = uuid4()
         final: dict = {}
+        started = time.perf_counter()
 
         async def contents() -> AsyncIterator[str]:
             async for event in self.llm.stream_events(messages, max_tokens=self.settings.llm_response_tokens):
@@ -103,12 +144,18 @@ class ChatService:
                 else:
                     final.update(event)
 
-        answer, completed, blocked = "", False, False
+        answer, completed, blocked, replaced = "", False, False, False
         try:
             async for delta in self.guard.filter_stream(contents(), system_prompt):
                 answer += delta
                 yield delta
             completed = True
+            if self.moderation is not None and answer:
+                verdict = await self.moderation.check_output(answer)
+                if not verdict.allowed:
+                    await self._record_incident(chat.owner_external_id, "output", verdict, answer)
+                    replaced = True
+                    raise ResponseReplaced(MODERATED_REPLY)
         except OutputBlockedError:
             blocked = True
             raise
@@ -120,13 +167,16 @@ class ChatService:
                 # терялся (поймано на живом стеке). shield=True даёт сохранению завершиться.
                 with anyio.CancelScope(shield=True):
                     await self.repo.append_message(chat_id, ChatMessage(
-                        chat_id=chat_id, role="assistant", content=answer,
-                        tokens=usage.get("completion_tokens") or count_text_tokens(answer)))
+                        id=assistant_id, chat_id=chat_id, role="assistant",
+                        content=MODERATED_REPLY if replaced else answer,
+                        tokens=usage.get("completion_tokens") or count_text_tokens(answer),
+                        latency_ms=round((time.perf_counter() - started) * 1000)))
             if not completed:
-                log.warning("chat.stream_interrupted", chat_id=str(chat_id), saved_chars=len(answer) if not blocked else 0,
-                            blocked=blocked)
+                log.warning("chat.stream_interrupted", chat_id=str(chat_id),
+                            saved_chars=len(answer) if not blocked else 0, blocked=blocked)
             else:
-                log.info("chat.message_completed", chat_id=str(chat_id), usage=final.get("usage"))
+                log.info("chat.message_completed", chat_id=str(chat_id), usage=final.get("usage"),
+                         moderated=replaced)
 
     async def list_messages(self, chat_id: UUID, limit: int = 50) -> list[ChatMessage]:
         await self.get_chat(chat_id)

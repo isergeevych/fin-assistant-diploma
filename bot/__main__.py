@@ -19,6 +19,7 @@ from app.observability.logging import setup_logging
 from bot.config import get_bot_settings
 from bot.handlers import build_router
 from bot.services.backend_client import BackendClient
+from bot.services.broadcaster import broadcast_loop
 from bot.web import build_api
 
 log = structlog.get_logger("bot")
@@ -38,7 +39,8 @@ async def main() -> None:
     )
     bot = Bot(token=settings.bot_token.get_secret_value())
     dp = Dispatcher(storage=MemoryStorage())
-    dp["backend"] = BackendClient(http)
+    backend = BackendClient(http)
+    dp["backend"] = backend
     dp["settings"] = settings
     dp.include_router(build_router())
 
@@ -47,7 +49,7 @@ async def main() -> None:
                                            log_level="warning"))
     log.info("bot.starting", backend=settings.backend_url, api_port=settings.bot_api_port)
     try:
-        await asyncio.gather(dp.start_polling(bot), server.serve())
+        await asyncio.gather(dp.start_polling(bot), server.serve(), broadcast_loop(bot, backend, settings))
     finally:
         await http.aclose()
         await bot.session.close()

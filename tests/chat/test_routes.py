@@ -28,7 +28,8 @@ def test_full_chat_flow(client, tmp_path):
 
     r = client.post(f"/chats/{chat_id}/messages", data={"content": "Привет, меня зовут Аня"})
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
-    assert '"type": "token", "delta": "Привет ' in r.text and r.text.rstrip().endswith('data: {"type": "done"}')
+    assert '"type": "token", "delta": "Привет ' in r.text
+    assert r.text.rstrip().splitlines()[-1].startswith('data: {"type": "done", "message_id": ')
 
     client.post(f"/chats/{chat_id}/messages", data={"content": "Как меня зовут?"})
     history = client.get(f"/chats/{chat_id}/messages").json()

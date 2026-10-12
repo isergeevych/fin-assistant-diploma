@@ -14,6 +14,10 @@ def user_message_for(exc: Exception) -> str:
         status = exc.response.status_code
         if status == 400:
             return "Не могу обработать этот запрос. Попробуйте сформулировать иначе."
+        if status == 403:
+            return "Сообщение нарушает правила сервиса, я не могу на него ответить."
+        if status == 401:
+            return "Нет доступа к этой функции."
         if status == 404:
             return "Диалог не найден — нажмите /start."
         if status == 429:

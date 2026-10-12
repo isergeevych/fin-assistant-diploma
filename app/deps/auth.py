@@ -15,3 +15,9 @@ def require_internal(settings: SettingsDep, x_internal_token: str = Header(defau
     expected = settings.internal_token.get_secret_value() if settings.internal_token else ""
     if not expected or not secrets.compare_digest(x_internal_token.encode(), expected.encode()):
         raise HTTPException(status_code=401, detail="invalid internal token")
+
+
+def require_admin(settings: SettingsDep, x_admin_token: str = Header(default="")) -> None:
+    expected = settings.admin_token.get_secret_value() if settings.admin_token else ""
+    if not expected or not secrets.compare_digest(x_admin_token.encode(), expected.encode()):
+        raise HTTPException(status_code=401, detail="invalid admin token")

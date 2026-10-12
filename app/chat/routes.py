@@ -15,7 +15,7 @@ SSE: data: {"type":"token","delta":"..."} … data: {"type":"done"}; ошибк�
 """
 
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 import httpx
@@ -25,10 +25,12 @@ from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
-from app.chat.deps import ChatServiceDep
+from app.chat.deps import ChatServiceDep, DbSessionDep
 from app.chat.domain import Chat, ChatMessage
+from app.chat.feedback import FeedbackError, save_feedback
 from app.chat.media import MediaError, media_to_part
-from app.core.exceptions import LLMError
+from app.chat.service import ResponseReplaced
+from app.core.exceptions import LLMError, ModerationBlockedError
 from app.core.sse import sse_event
 from app.deps.auth import require_internal
 from app.deps.providers import SettingsDep
@@ -50,6 +52,10 @@ class CreateChatIn(BaseModel):
 
 class CreateChatOut(BaseModel):
     chat_id: UUID
+
+
+class FeedbackIn(BaseModel):
+    value: Literal["up", "down"]
 
 
 class SystemMessageIn(BaseModel):
@@ -90,7 +96,7 @@ async def send_message(
     media: UploadFile | None = File(None),
 ) -> StreamingResponse:
     # Всё, что может отказать, — ДО начала стрима: так клиент получит честный HTTP-код.
-    await service.get_chat(chat_id)
+    chat = await service.get_chat(chat_id)
     service.check_input(content)
     media_part = media_meta = None
     if media is not None:
@@ -100,15 +106,25 @@ async def send_message(
             raise HTTPException(status_code=e.status, detail=str(e)) from e
         service.check_media_part(media_part)
         media_meta = {"mime": media.content_type, "size": media.size, "filename": media.filename}
+    # Б4.4: модерация контента — текст пользователя + текст из документа/голоса
+    document_text = media_part["text"] if media_part and media_part.get("type") == "text" else ""
+    moderated_text = f"{content}\n{document_text}" if document_text else content
+    try:
+        await service.moderate_input(chat, moderated_text)
+    except ModerationBlockedError as e:
+        raise HTTPException(status_code=403, detail={"code": e.code, "categories": e.categories}) from e
 
     async def events() -> AsyncIterator[str]:
         try:
             async for delta in service.send_message(chat_id, content, media_part, media_meta):
                 yield sse_event("token", delta=delta)
+        except ResponseReplaced as e:
+            yield sse_event("replace", text=e.replacement)  # модерация вывода: клиент заменяет показанный текст
         except LLMError as e:
             log.warning("chat.stream_error", code=e.code)
             yield sse_event("error", code=e.code, message=e.message)
-        yield sse_event("done")
+        message_id = getattr(service, "last_assistant_message_id", None)  # для кнопок 👍/👎 в боте
+        yield sse_event("done", message_id=str(message_id) if message_id else None)
 
     return StreamingResponse(events(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -124,6 +140,19 @@ async def list_messages(chat_id: UUID, service: ChatServiceDep,
 @router.delete("/{chat_id}/messages", summary="Очистить историю (soft delete)", responses=NOT_FOUND)
 async def clear_messages(chat_id: UUID, service: ChatServiceDep) -> dict:
     await service.clear_history(chat_id)
+    return {"status": "ok"}
+
+
+@router.post(
+    "/{chat_id}/messages/{message_id}/feedback",
+    summary="👍/👎 на ответ ассистента",
+    responses={404: {"description": "Сообщение не найдено в этом чате"}, 501: {"description": "Нужен Postgres"}},
+)
+async def message_feedback(chat_id: UUID, message_id: UUID, body: FeedbackIn, session: DbSessionDep) -> dict:
+    try:
+        await save_feedback(session, chat_id, message_id, body.value)
+    except FeedbackError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     return {"status": "ok"}
 
 

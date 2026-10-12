@@ -58,8 +58,9 @@ class BackendClient:
 
     async def send_message(
         self, chat_id: UUID, content: str, media: bytes | None = None, mime: str | None = None,
-        filename: str = "file.bin",
+        filename: str = "file.bin", meta: dict | None = None,
     ) -> AsyncIterator[str]:
+        """meta — сюда кладётся message_id ответа из события done (нужен для 👍/👎)."""
         # content передаём частью multipart (filename=None): без файла httpx иначе отправил бы
         # application/x-www-form-urlencoded, а контракт эндпоинта — multipart/form-data всегда.
         files: list = [("content", (None, content))]
@@ -82,10 +83,41 @@ class BackendClient:
                         if kind == "token":
                             started = True
                             yield payload["delta"]
+                        elif kind == "replace":  # Б4.4: модерация вывода — показанный текст заменить
+                            raise BackendStreamError("moderation_output", payload.get("text", ""))
                         elif kind == "error":
                             raise BackendStreamError(payload.get("code", "error"), payload.get("message", ""))
                         elif kind == "done":
+                            if meta is not None:
+                                meta["message_id"] = payload.get("message_id")
                             return
+
+    async def send_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
+        r = await self.http.post(f"/chats/{chat_id}/messages/{message_id}/feedback", json={"value": value})
+        r.raise_for_status()
+
+    # ---------- Б4.4: admin и рассылки ----------
+
+    async def admin_get(self, path: str, admin_token: str, **params) -> dict | list:
+        r = await self.http.get(f"/chats/admin/{path}", params=params, headers={"X-Admin-Token": admin_token})
+        r.raise_for_status()
+        return r.json()
+
+    async def admin_broadcast(self, message: str, admin_token: str) -> dict:
+        r = await self.http.post("/chats/admin/broadcast", json={"message": message, "interface_filter": "telegram"},
+                                 headers={"X-Admin-Token": admin_token})
+        r.raise_for_status()
+        return r.json()
+
+    async def pending_broadcasts(self, internal_token: str) -> list[dict]:
+        r = await self.http.get("/internal/broadcasts/pending", headers={"X-Internal-Token": internal_token})
+        r.raise_for_status()
+        return r.json()
+
+    async def mark_broadcast_done(self, broadcast_id: int, sent_count: int, internal_token: str) -> None:
+        r = await self.http.post(f"/internal/broadcasts/{broadcast_id}/done", json={"sent_count": sent_count},
+                                 headers={"X-Internal-Token": internal_token})
+        r.raise_for_status()
 
     async def clear_messages(self, chat_id: UUID) -> None:
         async for attempt in _retrying():

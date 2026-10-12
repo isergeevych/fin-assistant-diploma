@@ -19,3 +19,11 @@ def topics_kb() -> InlineKeyboardMarkup:
     kb.button(text="Отмена", callback_data=f"topic:{CANCEL}")
     kb.adjust(2, 2, 1)
     return kb.as_markup()
+
+
+def feedback_kb(message_id: str) -> InlineKeyboardMarkup:
+    """👍/👎 под ответом. callback_data ≤ 64 байт: «fb:up:» + UUID (36) = 42."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="👍", callback_data=f"fb:up:{message_id}")
+    kb.button(text="👎", callback_data=f"fb:down:{message_id}")
+    return kb.as_markup()
