@@ -571,6 +571,7 @@ agents = [
     { name = "langgraph" },
     { name = "langgraph-checkpoint-postgres" },
     { name = "langgraph-checkpoint-sqlite" },
+    { name = "langgraph-supervisor" },
     { name = "psycopg", extra = ["binary", "pool"] },
 ]
 eval = [
@@ -615,6 +616,7 @@ requires-dist = [
     { name = "langgraph", marker = "extra == 'agents'", specifier = ">=1.0,<2" },
     { name = "langgraph-checkpoint-postgres", marker = "extra == 'agents'", specifier = ">=2.1" },
     { name = "langgraph-checkpoint-sqlite", marker = "extra == 'agents'", specifier = ">=2.1" },
+    { name = "langgraph-supervisor", marker = "extra == 'agents'", specifier = ">=0.0.29" },
     { name = "llama-index", specifier = ">=0.14.25" },
     { name = "llama-index-embeddings-openai-like", specifier = ">=0.4.0" },
     { name = "llama-index-llms-openai-like", specifier = ">=0.8.0" },
@@ -1268,6 +1270,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/66/af/cdd4d6f3c05b3c1112ed3f12ef830faf15951b21d22cbc622a4becbbe25c/langgraph_sdk-0.3.15.tar.gz", hash = "sha256:29e805003d2c6e296823dd71992610976fd0428cefaa8b3304fd91f2247037de", size = 201924, upload-time = "2026-05-22T16:54:27.678Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/be/a5/0196d9c05749c25bc198e4909d68c998bc3120297e14944921baf2f4c384/langgraph_sdk-0.3.15-py3-none-any.whl", hash = "sha256:3838773acf7456d158165385d49f48f1e856f28b56ccd99ea139a8f27004815d", size = 98166, upload-time = "2026-05-22T16:54:26.013Z" },
+]
+
+[[package]]
+name = "langgraph-supervisor"
+version = "0.0.31"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "langgraph" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/15/a0/6e9286a2e4a9ed8c9d299d0131b323cae376316a63286d2880031bb01082/langgraph_supervisor-0.0.31.tar.gz", hash = "sha256:0f71d5098fa1ac274423eff08750345450045c1e0dd2480ab7f3e5c1848f6016", size = 21910, upload-time = "2025-11-19T18:34:29.795Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/7f/bb73da8db36c96f32cdd0292f2cd75e2d671150b0d177575da560ad994a1/langgraph_supervisor-0.0.31-py3-none-any.whl", hash = "sha256:6bbe5311f536d38779766cc6f074005e3e892d37edbfd875731923221daa1889", size = 16505, upload-time = "2025-11-19T18:34:28.481Z" },
 ]
 
 [[package]]
