@@ -52,6 +52,10 @@ async def get_spending_summary(args: SpendingSummaryArgs, ctx: ToolContext) -> d
     top_merchants = sorted(by_merchant.items(), key=lambda kv: kv[1], reverse=True)[:3]
     foreign = sorted({t.currency for t in txs if t.currency != "RUB"})
     return {
+        # Б3.7: без этого поля модель на «покажи траты tg:100002» подписывала СВОИ данные пользователя чужим id
+        # (правило в промпте v2 не помогло). Факт о владельце — в данных, а не в инструкции.
+        "data_owner": ("текущий пользователь — тот, кто пишет. Операции других людей недоступны: если спрашивали "
+                       "о другом человеке, скажи об этом и уточни, что это собственные данные пользователя"),
         "period": {"start": args.period_start.isoformat(), "end": args.period_end.isoformat()},
         "category": args.category,
         "transactions_count": len(txs),

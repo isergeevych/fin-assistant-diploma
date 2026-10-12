@@ -17,6 +17,7 @@ System prompt подгружается из app/prompts/system_v1.j2 — inline-
 
 import json
 import logging
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -31,6 +32,11 @@ from app.tools.schemas import TOOLS
 
 MAX_TOOL_ROUNDS = 4
 log = logging.getLogger("llm.tool_call")
+# Явная ссылка на чужой аккаунт (tg:123, vk:…) — отказ кодом, до LLM (Б3.7, кейс sf_003): правила в промпте
+# модель нарушала и подписывала данные текущего пользователя чужим id.
+FOREIGN_ID = re.compile(r"\b(?:tg|vk|web):\d+\b", re.IGNORECASE)
+FOREIGN_DATA_REFUSAL = ("Я работаю только с вашими операциями — данные других пользователей мне недоступны. "
+                        "Могу показать ваши собственные траты за этот период.")
 
 
 @dataclass
@@ -73,6 +79,11 @@ async def run_tool_call(
         {"role": "user", "content": user_input},
     ]
     _log("tool_call.input", request_id, model=model, user_input=user_input, owner=owner_external_id)
+    foreign = {m.lower() for m in FOREIGN_ID.findall(user_input)} - {owner_external_id.lower()}
+    if foreign:
+        result.answer = FOREIGN_DATA_REFUSAL
+        _log("tool_call.foreign_data_refused", request_id, mentioned=sorted(foreign))
+        return result
 
     for round_no in range(1, MAX_TOOL_ROUNDS + 2):
         started = time.perf_counter()

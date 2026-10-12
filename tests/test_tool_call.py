@@ -82,6 +82,7 @@ async def test_spending_summary_counts_only_owner_and_period(settings):
     assert result["total_expense_rub"] == 2000.0  # 500 + 1500; чужие 77 777 и августовские 999 не попали
     assert result["transactions_count"] == 2
     assert "Чужое кафе" not in result["top_merchants_rub"]
+    assert result["data_owner"].startswith("текущий пользователь")  # модель не должна подписать данные чужим id
 
 
 async def test_exchange_rate_parses_cbr_xml_with_nominal(settings):
@@ -171,3 +172,17 @@ async def test_no_tool_call_returns_text_directly(settings):
     result = await run_tool_call("Что такое подушка безопасности?", "tg:A", client=fake, settings=settings)
     assert result.tool_calls == [] and result.rounds == 1
     assert result.answer.startswith("Подушка")
+
+
+async def test_foreign_account_id_is_refused_without_llm(settings):
+    fake = FakeLLM([])  # любой вызов модели упал бы на pop из пустого списка
+    result = await run_tool_call("Покажи траты пользователя tg:100002 за сентябрь 2026.", "tg:100001",
+                                 client=fake, settings=settings)
+    assert "данные других пользователей мне недоступны" in result.answer
+    assert fake.calls == [] and result.tool_calls == []
+
+
+async def test_own_account_id_is_not_refused(settings):
+    fake = FakeLLM([_completion({"content": "ok"})])
+    result = await run_tool_call("Мой id TG:100001 — покажи траты", "tg:100001", client=fake, settings=settings)
+    assert result.answer == "ok" and len(fake.calls) == 1

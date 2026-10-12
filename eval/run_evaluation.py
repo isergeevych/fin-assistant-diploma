@@ -39,6 +39,7 @@ from app.llm.parsing import parse_json_response  # noqa: E402
 from app.prompts.loader import render_template  # noqa: E402
 
 CRITERIA = ("relevance", "correctness", "completeness")
+JUDGE_REASONING_EFFORT = "low"  # Gemini не даёт выключить reasoning; low — дешевле и быстрее
 
 
 class Verdict(BaseModel):
@@ -59,8 +60,13 @@ async def judge(client: AsyncOpenAI, model: str, item: dict, answer: str) -> Ver
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
             response_format={"type": "json_object"},
-            max_tokens=1200,
+            # у reasoning-моделей (Gemini Pro) «размышления» входят в лимит: 1200 не хватало бы на сам JSON
+            max_tokens=4000,
+            extra_body={"reasoning_effort": JUDGE_REASONING_EFFORT},
         )
+        message = response.choices[0].message
+        if message.refusal:  # повтор не поможет: фильтр провайдера детерминирован
+            raise RuntimeError(f"судья отказал на {item['id']}: {message.refusal[:200]}")
         try:
             return Verdict.model_validate(parse_json_response(response.choices[0].message.content or ""))
         except ValueError as e:
@@ -114,7 +120,9 @@ def aggregates(items: list[dict]) -> dict:
 async def main() -> None:
     parser = argparse.ArgumentParser(description="G-Eval прогон golden dataset")
     parser.add_argument("--golden", type=Path, default=ROOT / "eval" / "golden_dataset.json")
-    parser.add_argument("--judge", default="anthropic/claude-sonnet-4.6")
+    # Claude Sonnet 5.5 отказывал на части items (content_filter: «reverse engineering model outputs» —
+    # ложное срабатывание на промпт судьи), поэтому судья — Gemini Pro: другой вендор, сильнее gpt-5.4-mini.
+    parser.add_argument("--judge", default="google/gemini-3.1-pro-preview")
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--concurrency", type=int, default=4)
     parser.add_argument("--limit", type=int, default=None, help="первые N items — для быстрой проверки")
@@ -148,7 +156,7 @@ async def main() -> None:
     }
     out.write_text(json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(run["aggregates"], ensure_ascii=False, indent=2))
-    print(f"→ {out.relative_to(ROOT)}")
+    print(f"→ {out.resolve().relative_to(ROOT) if out.resolve().is_relative_to(ROOT) else out}")
 
 
 if __name__ == "__main__":

@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     )
 
     llm: LLMSettings
-    prompt_version: str = "v1"
+    prompt_version: str = "v2"  # v2 (Б3.7, 13.10): чужие данные — явный отказ; без лишних уточнений периода
     product_name: str = "Финпомощник"
 
     # Финансовые данные пользователей (до модуля 4 — CSV-файл)

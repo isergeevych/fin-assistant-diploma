@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Golden dataset ассистента «Финпомощник» (Б3.7). Пользователь — tg:100001 из синтетических данных data/finance/transactions.csv (seed=42). Эталонные суммы посчитаны из этих данных; курсы — ЦБ РФ на 10.10.2026.",
   "owner_external_id": "tg:100001",
   "items": [
@@ -82,7 +82,7 @@
     },
     {
       "id": "cur_002", "category": "currency", "difficulty": "medium", "source": "synthetic",
-      "question": "Сколько будет 500 долларов в рублях по курсу ЦБ?",
+      "question": "Сколько было 500 долларов в рублях по курсу ЦБ на 10 октября 2026?",
       "expected_answer": "По курсу ЦБ РФ (на 10.10.2026: 1 USD = 84,90 ₽) 500 долларов ≈ 42 452 ₽.",
       "expected_keywords": ["42 4", "42452", "84,9", "84.9"],
       "must_not_contain": []
