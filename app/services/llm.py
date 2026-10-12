@@ -8,6 +8,7 @@ stream(): без кеша — дельты отдаются по мере ген
 """
 
 import hashlib
+import time
 from collections.abc import AsyncIterator
 
 import structlog
@@ -15,10 +16,30 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from app.core.config import Settings
+from app.observability.pii import preview, prompt_hash
 from app.schemas.chat import ChatDelta, ChatRequest, ChatResponse, Usage
 from app.services.llm_client import AsyncLLMClient
 
 log = structlog.get_logger("llm.service")
+
+
+def _log_completed(req: ChatRequest, model: str, usage: Usage | None, finish_reason: str | None,
+                   started: float, cached: bool, stream: bool) -> None:
+    """Одна строка на LLM-запрос. Сырой промпт не пишется никогда — только hash и маскированный preview.
+    request_id/user_id подтягиваются из contextvars, проставленных HTTP-middleware."""
+    last_user = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
+    log.info(
+        "llm_request_completed",
+        model=model,
+        input_tokens=usage.prompt_tokens if usage else None,
+        output_tokens=usage.completion_tokens if usage else None,
+        latency_ms=round((time.perf_counter() - started) * 1000),
+        finish_reason=finish_reason,
+        cached=cached,
+        stream=stream,
+        prompt_hash=prompt_hash(last_user),
+        prompt_preview=preview(last_user),
+    )
 
 
 def cache_key(req: ChatRequest) -> str:
@@ -33,12 +54,13 @@ class LLMService:
         self.settings = settings
 
     async def complete(self, req: ChatRequest) -> ChatResponse:
+        started = time.perf_counter()
         key = cache_key(req)
         cached = await self._cache_get(key)
         if cached is not None:
             response = ChatResponse.model_validate_json(cached)
             response.cached = True
-            log.info("cache.hit", key=key[:20])
+            _log_completed(req, response.model, response.usage, response.finish_reason, started, True, False)
             return response
 
         completion = await self.llm.chat(
@@ -46,16 +68,21 @@ class LLMService:
         )
         response = ChatResponse.from_openai(completion)
         await self._cache_set(key, response.model_dump_json())
+        _log_completed(req, response.model, response.usage, response.finish_reason, started, False, False)
         return response
 
     async def stream(self, req: ChatRequest) -> AsyncIterator[ChatDelta]:
+        started = time.perf_counter()
         async for event in self.llm.stream_events(
             [m.model_dump() for m in req.messages], model=req.model, **req.llm_params()
         ):
             if "content" in event:
                 yield ChatDelta(content=event["content"])
-            elif event.get("usage"):
-                yield ChatDelta(usage=Usage(**event["usage"]))
+            else:
+                usage = Usage(**event["usage"]) if event.get("usage") else None
+                _log_completed(req, event.get("model") or "", usage, event.get("finish_reason"), started, False, True)
+                if usage:
+                    yield ChatDelta(usage=usage)
 
     async def _cache_get(self, key: str) -> str | None:
         if self.cache is None:

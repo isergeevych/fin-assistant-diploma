@@ -19,11 +19,15 @@ services:
       REDIS_URL: redis://redis:6379/0
       # Локальная модель (tertiary fallback) живёт на хосте, а не в контейнере
       LLM__LOCAL_BASE_URL: ${LLM_LOCAL_BASE_URL_DOCKER:-http://host.docker.internal:11434/v1}
+      # Б3.6: трейсы OpenInference → Phoenix (phoenix.otel сам добавит /v1/traces)
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       redis:
         condition: service_healthy
+      phoenix:
+        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 15s
@@ -44,5 +48,19 @@ services:
       retries: 3
     restart: unless-stopped
 
+  phoenix:
+    # Версия закреплена (не :latest) — обновления UI/схемы хранилища не должны приезжать молча
+    image: arizephoenix/phoenix:version-20.21
+    ports:
+      # Только на localhost: в трейсах полные промпты и ответы
+      - "127.0.0.1:6006:6006"   # UI + OTLP/HTTP
+      - "127.0.0.1:4317:4317"   # OTLP/gRPC
+    environment:
+      PHOENIX_WORKING_DIR: /data
+    volumes:
+      - phoenix-data:/data
+    restart: unless-stopped
+
 volumes:
   redis_data: {}
+  phoenix-data: {}
