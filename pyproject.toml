@@ -42,6 +42,15 @@ dependencies = [
 rerank = [
     "sentence-transformers>=6.1.0",
 ]
+eval = [
+    "langchain-community<0.4",
+    "pandas>=2",
+    "ragas>=0.4,<0.5",
+    "rapidfuzz>=3.14.6",
+]
+tracing = [
+    "openinference-instrumentation-llama-index>=3,<5",
+]
 
 [dependency-groups]
 dev = [

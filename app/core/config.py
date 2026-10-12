@@ -134,6 +134,20 @@ class Settings(BaseSettings):
     # и возвращала пустой ответ. "none" — без размышлений (Ollama: 2.5 с вместо обрыва); пусто — не передавать.
     rag_llm_reasoning_effort: str | None = "none"
 
+    # --- Оценка RAG (Б5.6) ---
+    # Судья ≠ production-модель (роль другая). Пусто — берётся RAG-LLM (локально qwen3:8b).
+    eval_judge_base_url: str | None = None
+    eval_judge_model: str | None = None
+    eval_judge_api_key: SecretStr | None = None
+    phoenix_llamaindex_tracing: bool = False  # LlamaIndexInstrumentor в lifespan (Б5.6)
+
+    # --- Агенты (модуль 6) ---
+    # Канон курса — gpt-5.4-mini через OpenRouter (пусто = основной LLM); локально — qwen3:8b в Ollama (умеет tools).
+    agent_base_url: str | None = None
+    agent_model: str | None = None
+    agent_api_key: SecretStr | None = None
+    agent_reasoning_effort: str | None = None  # qwen3: "none" — без «размышлений» на каждом шаге
+
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True

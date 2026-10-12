@@ -42,7 +42,8 @@ http_log = structlog.get_logger("llm-service")
 async def lifespan(app: FastAPI):
     settings = get_settings()
     setup_logging(settings.log_level, log_file=settings.log_dir / "app.jsonl")
-    setup_tracing()  # до создания клиентов OpenAI — иначе патч инструментора их не затронет
+    # до создания клиентов OpenAI — иначе патч инструментора их не затронет; LlamaIndex — под флагом (Б5.6)
+    setup_tracing(llamaindex=settings.phoenix_llamaindex_tracing)
     # Б3.8: canary генерируется заново при каждом старте и живёт только в памяти процесса
     app.state.canary = f"CANARY_{secrets.token_hex(4)}"
     app.state.llm = AsyncLLMClient(settings.llm)

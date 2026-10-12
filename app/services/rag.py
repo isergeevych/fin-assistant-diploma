@@ -233,6 +233,25 @@ class RAGService:
                 "confident": self.confident(chunks, top_score), "sources": sources, "llm_called": True,
                 "search_query": search_query}
 
+    def evaluate_inputs(self, question: str) -> dict:
+        """Б5.6: ответ + ПОЛНЫЕ тексты найденных фрагментов за один поиск (метрикам RAGAS нужны полные
+        контексты, а не усечённые snippet из /rag/query)."""
+        import time
+
+        started = time.perf_counter()
+        chunks, top_score = self.retrieve(question)
+        if not self.passes_guard(chunks, top_score):
+            answer = REFUSAL
+        else:
+            prompt = render_template("rag_answer.j2", question=question,
+                                     chunks=[{"source": c["file_name"] + (f", стр. {c['page']}" if c["page"] else ""),
+                                              "text": c["text"]} for c in chunks])
+            response = self.client.chat.completions.create(model=self.model, max_tokens=700, **self.llm_extra,
+                                                           messages=[{"role": "user", "content": prompt}])
+            answer = (response.choices[0].message.content or "").strip()
+        return {"answer": answer, "retrieved_contexts": [c["text"] for c in chunks], "top_score": round(top_score, 3),
+                "sources": [c["file_name"] for c in chunks], "latency_ms": round((time.perf_counter() - started) * 1000)}
+
     def _answer_v53(self, question: str) -> dict:
         retriever = self.index.as_retriever(similarity_top_k=self.settings.rag_top_k)
         nodes = retriever.retrieve(question)

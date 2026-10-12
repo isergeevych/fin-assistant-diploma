@@ -31,6 +31,8 @@ services:
       # Re-ranker требует torch (+~700 МБ) — в образ сервиса не кладём (лимит 3.5: < 500 МБ).
       # В контейнере score-guard работает по векторному порогу; локально (uv sync --extra rerank) — по re-ranker.
       RAG_RERANK_ENABLED: "false"
+      # Б5.6: дерево query → retrieve → LLM в Phoenix (extra `tracing` есть в образе)
+      PHOENIX_LLAMAINDEX_TRACING: ${PHOENIX_LLAMAINDEX_TRACING:-true}
     volumes:
       - ./data:/app/data        # корпус + загрузки через POST /documents/upload
       - app-var:/app/var        # docstore (хеши для UPSERTS), кеш эмбеддингов
