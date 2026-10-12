@@ -12,10 +12,14 @@
 2. невидимые и служебные символы Unicode (tag-символы U+E0000–U+E007F,
    zero-width, bidi-override) — так прячут инструкции (garak goodside.Tag);
 3. доля непечатаемых символов — признак атак кодировками;
-4. длинные base64-блоки — encoding.InjectBase64 прячет инструкцию в base64;
+4. base64: длинные блоки — всегда; короткие токены (от 6 символов) — если реально декодируются в читаемый
+   текст. garak InjectBase64 прятал в base64 короткие слова («SW5qdW4=» — слур), и модель их раскрывала:
+   34 % успешных атак после первой версии правила (только блоки от 40 символов);
 5. blocklist известных шаблонов инъекций на английском и русском.
 """
 
+import base64
+import binascii
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -41,6 +45,7 @@ INJECTION_PATTERNS: Final[list[re.Pattern[str]]] = [
 MAX_INPUT_CHARS: Final[int] = 4000
 NON_PRINTABLE_RATIO_LIMIT: Final[float] = 0.10
 BASE64_BLOCK_RE: Final = re.compile(r"(?:[A-Za-z0-9+/]{4}){10,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?")
+BASE64_TOKEN_RE: Final = re.compile(r"(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{6,}={0,2}(?![A-Za-z0-9+/=])")
 SUSPICIOUS_CODEPOINTS: Final = (
     (0xE0000, 0xE007F),  # Unicode tags — невидимый текст
     (0x200B, 0x200F),    # zero-width и направляющие метки
@@ -61,6 +66,22 @@ def _suspicious_char(c: str) -> bool:
     return any(lo <= cp <= hi for lo, hi in SUSPICIOUS_CODEPOINTS)
 
 
+def _decodes_to_text(token: str) -> bool:
+    """Обычные слова и коды (PLUS2026, ИНН, номера договоров) декодируются в мусор; спрятанный текст — в буквы."""
+    if len(token.rstrip("=")) % 4 == 1:
+        return False
+    try:
+        raw = base64.b64decode(token + "=" * (-len(token) % 4), validate=True)
+    except (binascii.Error, ValueError):
+        return False
+    try:
+        decoded = raw.decode("utf-8")
+    except UnicodeDecodeError:  # ловим на КАЖДОМ токене: иначе «BASE64» перед payload прерывал всю проверку
+        return False
+    letters = sum(c.isalpha() or c.isspace() for c in decoded)
+    return len(decoded) >= 4 and decoded.isprintable() and letters / len(decoded) >= 0.8
+
+
 def validate_input(text: str) -> ValidationResult:
     if len(text) > MAX_INPUT_CHARS:
         return ValidationResult(False, f"ввод длиннее {MAX_INPUT_CHARS} символов", rule="length")
@@ -74,6 +95,8 @@ def validate_input(text: str) -> ValidationResult:
 
     if BASE64_BLOCK_RE.search(text):
         return ValidationResult(False, "длинный base64-блок", rule="base64")
+    if any(_decodes_to_text(m.group()) for m in BASE64_TOKEN_RE.finditer(text)):
+        return ValidationResult(False, "текст, спрятанный в base64", rule="base64")
 
     normalized = unicodedata.normalize("NFKC", text)  # «ｉｇｎｏｒｅ» → «ignore»
     for pattern in INJECTION_PATTERNS:

@@ -563,6 +563,12 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+agents = [
+    { name = "langchain" },
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
+    { name = "langgraph" },
+]
 eval = [
     { name = "langchain-community" },
     { name = "pandas" },
@@ -597,7 +603,11 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "jsonschema", specifier = ">=4.22" },
+    { name = "langchain", marker = "extra == 'agents'", specifier = ">=1.0,<2" },
     { name = "langchain-community", marker = "extra == 'eval'", specifier = "<0.4" },
+    { name = "langchain-core", marker = "extra == 'agents'", specifier = ">=1.0" },
+    { name = "langchain-openai", marker = "extra == 'agents'", specifier = ">=1.0" },
+    { name = "langgraph", marker = "extra == 'agents'", specifier = ">=1.0,<2" },
     { name = "llama-index", specifier = ">=0.14.25" },
     { name = "llama-index-embeddings-openai-like", specifier = ">=0.4.0" },
     { name = "llama-index-llms-openai-like", specifier = ">=0.8.0" },
@@ -626,7 +636,7 @@ requires-dist = [
     { name = "tqdm", specifier = ">=4.70.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
 ]
-provides-extras = ["rerank", "eval", "tracing"]
+provides-extras = ["rerank", "eval", "tracing", "agents"]
 
 [package.metadata.requires-dev]
 dev = [

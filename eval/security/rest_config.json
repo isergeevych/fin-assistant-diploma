@@ -11,6 +11,7 @@
       },
       "response_json": true,
       "response_json_field": "content",
+      "skip_codes": [400, 502],
       "request_timeout": 90
     }
   }
