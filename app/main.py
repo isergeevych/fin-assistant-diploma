@@ -19,7 +19,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from app.chat import routes as chat_routes
+from app.chat.service import ChatNotFoundError
 from app.core.config import get_settings
 from app.core.exceptions import LLMError
 from app.observability.logging import setup_logging
@@ -46,9 +49,16 @@ async def lifespan(app: FastAPI):
     app.state.redis = Redis.from_url(
         settings.redis_url, decode_responses=True, socket_connect_timeout=1, socket_timeout=1
     )
+    # Б4.1: Postgres — только если история хранится в нём (CHAT_REPOSITORY=postgres)
+    engine = None
+    if settings.chat_repository == "postgres":
+        engine = create_async_engine(settings.database_url, pool_size=10, max_overflow=5, pool_pre_ping=True)
+        app.state.db_sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
     yield
     await app.state.llm.aclose()
     await app.state.redis.aclose()
+    if engine is not None:
+        await engine.dispose()
 
 
 app = FastAPI(
@@ -112,6 +122,12 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     )
 
 
+@app.exception_handler(ChatNotFoundError)
+async def chat_not_found_handler(request: Request, exc: ChatNotFoundError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"error": {"code": "chat_not_found", "message": "Чат не найден"}})
+
+
 app.include_router(health.router)
 app.include_router(models.router)
 app.include_router(chat.router)
+app.include_router(chat_routes.router)

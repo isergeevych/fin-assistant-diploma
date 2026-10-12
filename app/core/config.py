@@ -8,6 +8,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -61,6 +62,18 @@ class Settings(BaseSettings):
     # Явный список origin'ов. "*" вместе с credentials запрещён (CORS-спецификация + безопасность).
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
     log_level: str = "INFO"
+
+    # --- Чат и история (Б4.1) ---
+    chat_repository: Literal["json", "postgres"] = "json"
+    chat_storage_dir: Path = PROJECT_ROOT / "var" / "chats"
+    chat_context_strategy: Literal["sliding", "hybrid"] = "sliding"
+    chat_context_window: int = 10  # сколько последних сообщений истории идёт в контекст
+    # Токен-бюджет запроса: CONTEXT - RESPONSE - SAFETY. Окно модели 400k, но бюджет держим
+    # маленьким сознательно — длинная история дорога и почти не нужна финансовому ассистенту.
+    llm_context_tokens: int = 16_000
+    llm_response_tokens: int = 1_024
+    llm_safety_margin_tokens: int = 512
+    database_url: str = "postgresql+asyncpg://fin:fin@127.0.0.1:5433/fin"
 
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.

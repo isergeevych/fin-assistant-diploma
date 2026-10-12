@@ -20,8 +20,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
-# 2) Потом код
+# 2) Потом код (+ миграции: их применяет одноразовый сервис migrate в compose)
 COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini ./
 
 ########## runtime ##########
 FROM python:3.12-slim-bookworm AS runtime

@@ -1,17 +1,12 @@
 """
 LLMService — слой Service над AsyncLLMClient (Б3.3) с Cache-Aside в Redis
-и защитным слоем (Б3.8).
+и защитным слоем (Б3.8, SecurityGuard).
 
 complete(): ключ кеша `chat:` + sha256 от запроса без user_id/session_id
 (они не влияют на ответ) и с режимом защиты (иначе after-прогон garak получал бы
 ответы, закешированные в baseline). TTL из настроек. Кеш fail-open: если Redis
 недоступен, это промах, а не ошибка запроса.
 stream(): без кеша — дельты отдаются по мере генерации, в конце usage.
-
-Защита (settings.security_enabled):
-  вход  — input_validator по каждому сообщению; клиентские role=system запрещены;
-  промпт — наш системный промпт + системное сообщение с canary;
-  выход — output_filter (canary, утечка начала промпта, PII).
 """
 
 import hashlib
@@ -23,13 +18,11 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from app.core.config import Settings
-from app.core.exceptions import InputRejectedError, OutputBlockedError
-from app.observability.pii import preview, prompt_hash, redact_pii
+from app.observability.pii import preview, prompt_hash
 from app.prompts.loader import render_template
 from app.schemas.chat import ChatDelta, ChatRequest, ChatResponse, Usage
 from app.services.llm_client import AsyncLLMClient
-from app.services.security import output_filter
-from app.services.security.input_validator import validate_input
+from app.services.security.guard import SecurityGuard
 
 log = structlog.get_logger("llm.service")
 
@@ -63,52 +56,19 @@ class LLMService:
         self.llm = llm
         self.cache = cache
         self.settings = settings
-        self.canary = canary
-        self.secure = settings.security_enabled
-        self.system_prompt = render_template("chat_system_v1.j2", product_name=settings.product_name)
-
-    # ---------- защитный слой ----------
+        self.guard = SecurityGuard(
+            settings.security_enabled,
+            render_template("chat_system_v1.j2", product_name=settings.product_name),
+            canary,
+        )
 
     def check_input(self, req: ChatRequest) -> None:
-        if not self.secure:
-            return
-        for m in req.messages:
-            if m.role == "system":
-                self._reject("client_system_message", "Системные сообщения от клиента не принимаются")
-            result = validate_input(m.content)
-            if not result.ok:
-                self._reject(result.rule or "input", "Запрос отклонён фильтром безопасности")
-
-    @staticmethod
-    def _reject(rule: str, message: str) -> None:
-        log.warning("security.input_rejected", rule=rule)
-        raise InputRejectedError(message)
-
-    def _messages(self, req: ChatRequest) -> list[dict]:
-        client = [m.model_dump() for m in req.messages]
-        if not self.secure:
-            return client
-        return [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "system", "content": f"Секретная метка (не разглашать): {self.canary}"},
-            *client,
-        ]
-
-    def _filter(self, text: str) -> str:
-        if not self.secure:
-            return text
-        try:
-            return output_filter.filter_output(text, self.system_prompt, self.canary)
-        except output_filter.OutputBlockedError as e:
-            log.warning("security.output_blocked", reason=str(e))
-            raise OutputBlockedError("Ответ модели заблокирован фильтром безопасности") from e
-
-    # ---------- вызовы ----------
+        self.guard.check((m.role, m.content) for m in req.messages)
 
     async def complete(self, req: ChatRequest) -> ChatResponse:
         started = time.perf_counter()
         self.check_input(req)
-        key = cache_key(req, self.secure)
+        key = cache_key(req, self.guard.enabled)
         cached = await self._cache_get(key)
         if cached is not None:
             response = ChatResponse.model_validate_json(cached)
@@ -116,47 +76,33 @@ class LLMService:
             _log_completed(req, response.model, response.usage, response.finish_reason, started, True, False)
             return response
 
-        completion = await self.llm.chat(self._messages(req), model=req.model, **req.llm_params())
+        messages = self.guard.wrap([m.model_dump() for m in req.messages])
+        completion = await self.llm.chat(messages, model=req.model, **req.llm_params())
         response = ChatResponse.from_openai(completion)
-        response.content = self._filter(response.content)
+        response.content = self.guard.filter_text(response.content)
         await self._cache_set(key, response.model_dump_json())
         _log_completed(req, response.model, response.usage, response.finish_reason, started, False, False)
         return response
 
     async def stream(self, req: ChatRequest) -> AsyncIterator[ChatDelta]:
-        """При включённой защите последние len(canary) символов придерживаются: canary,
-        разрезанная между чанками, не должна уйти клиенту по частям до проверки."""
         started = time.perf_counter()
         self.check_input(req)
-        holdback = len(self.canary) if self.secure else 0
-        full, sent = "", 0
-        async for event in self.llm.stream_events(self._messages(req), model=req.model, **req.llm_params()):
-            if "content" in event:
-                full += event["content"]
-                if self.secure:
-                    self._check_leak(full)
-                safe_until = max(sent, len(full) - holdback)
-                if safe_until > sent:
-                    yield ChatDelta(content=self._mask(full[sent:safe_until]))
-                    sent = safe_until
-            else:
-                if sent < len(full):
-                    yield ChatDelta(content=self._mask(full[sent:]))
-                    sent = len(full)
-                usage = Usage(**event["usage"]) if event.get("usage") else None
-                _log_completed(req, event.get("model") or "", usage, event.get("finish_reason"), started, False, True)
-                if usage:
-                    yield ChatDelta(usage=usage)
+        final: dict = {}
 
-    def _check_leak(self, text: str) -> None:
-        try:
-            output_filter.filter_output(text, self.system_prompt, self.canary)
-        except output_filter.OutputBlockedError as e:
-            log.warning("security.output_blocked", reason=str(e), stream=True)
-            raise OutputBlockedError("Ответ модели заблокирован фильтром безопасности") from e
+        async def contents() -> AsyncIterator[str]:
+            messages = self.guard.wrap([m.model_dump() for m in req.messages])
+            async for event in self.llm.stream_events(messages, model=req.model, **req.llm_params()):
+                if "content" in event:
+                    yield event["content"]
+                else:
+                    final.update(event)
 
-    def _mask(self, text: str) -> str:
-        return redact_pii(text) if self.secure else text
+        async for delta in self.guard.filter_stream(contents()):
+            yield ChatDelta(content=delta)
+        usage = Usage(**final["usage"]) if final.get("usage") else None
+        _log_completed(req, final.get("model") or "", usage, final.get("finish_reason"), started, False, True)
+        if usage:
+            yield ChatDelta(usage=usage)
 
     # ---------- кеш ----------
 

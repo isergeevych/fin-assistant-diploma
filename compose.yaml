@@ -21,6 +21,8 @@ services:
       LLM__LOCAL_BASE_URL: ${LLM_LOCAL_BASE_URL_DOCKER:-http://host.docker.internal:11434/v1}
       # Б3.6: трейсы OpenInference → Phoenix (phoenix.otel сам добавит /v1/traces)
       PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
+      # Б4.1: внутри compose-сети Postgres — это хост postgres:5432
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -28,12 +30,45 @@ services:
         condition: service_healthy
       phoenix:
         condition: service_started
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 15s
+    restart: unless-stopped
+
+  # Одноразовый сервис: применяет миграции и завершается. app стартует только после
+  # его успешного выхода — приложение никогда не увидит БД без нужных таблиц.
+  migrate:
+    image: llm-service:v1
+    command: ["alembic", "upgrade", "head"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # Только localhost и не 5432 (на машине разработчика занят другим проектом) — для psql/alembic с хоста
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
   redis:
@@ -64,3 +99,4 @@ services:
 volumes:
   redis_data: {}
   phoenix-data: {}
+  pg-data: {}
