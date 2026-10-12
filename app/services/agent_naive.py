@@ -65,12 +65,15 @@ def run_agent(task: str, max_steps: int = 6) -> dict:
                                               tools=TOOLS, **extra)
         msg, usage = resp.choices[0].message, resp.usage
         messages.append(msg.model_dump(exclude_none=True))
+        # токены и время LLM — только на первой записи шага: при параллельных tool_calls иначе сумма по trace завышена
         base = {"step": step, "llm_input_tokens": usage.prompt_tokens, "llm_output_tokens": usage.completion_tokens}
         if not msg.tool_calls:
             trace.append({**base, "tool_name": None, "tool_args": None, "tool_result": None,
                           "duration_ms": round((time.perf_counter() - started) * 1000)})
             return {"answer": msg.content, "steps": step, "trace": trace}
-        for call in msg.tool_calls:
+        for i, call in enumerate(msg.tool_calls):
+            if i:
+                base, started = {"step": step, "llm_input_tokens": 0, "llm_output_tokens": 0}, time.perf_counter()
             fn = DISPATCH.get(call.function.name)
             try:
                 result = fn(**json.loads(call.function.arguments or "{}")) if fn else \

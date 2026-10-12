@@ -75,3 +75,11 @@ def test_no_dynamic_dispatch_in_source():
     src = open(agent_naive.__file__, encoding="utf-8").read()
     for banned in ("eval(", "exec(", "getattr(", "globals()["):
         assert banned not in src
+
+
+def test_parallel_tool_calls_count_llm_tokens_once(fake):
+    fake(_resp(tool_calls=[_call("get_current_time", "{}", "c1"), _call("get_current_time", "{}", "c2")]),
+         _resp(content="ok"))
+    out = agent_naive.run_agent("время дважды")
+    assert sum(t["llm_input_tokens"] for t in out["trace"]) == 200  # 2 вызова LLM × 100, а не 3 × 100
+    assert [t["llm_input_tokens"] for t in out["trace"]] == [100, 0, 100]
