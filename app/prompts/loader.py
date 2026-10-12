@@ -30,6 +30,11 @@ def render_system_prompt(version: str = "v1", **context) -> str:
     return _env.get_template(f"system_{version}.j2").render(**context).strip()
 
 
+def render_template(name: str, **context) -> str:
+    """Любой промпт-шаблон из app/prompts (например judge_geval.j2). Значения — только переменными."""
+    return _env.get_template(name).render(**context).strip()
+
+
 @lru_cache(maxsize=32)
 def load_tool_description(tool_name: str) -> str:
     return (PROMPTS_DIR / "tools" / f"{tool_name}.md").read_text(encoding="utf-8").strip()

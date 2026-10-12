@@ -1,0 +1,7 @@
+# Пороги «можно / нельзя релизить» для eval/check_thresholds.py.
+# Метрика берётся из aggregates последнего eval/runs/*.json.
+correctness_avg: {min: 4.0}
+min_correctness: {min: 2.0}
+relevance_avg: {min: 4.0}
+completeness_avg: {min: 3.5}
+must_not_violations: {max: 0}   # ни одного запрещённого фрагмента в ответах

@@ -5,6 +5,7 @@ from typing import Literal
 from openai.types.chat import ChatCompletion
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.observability.pii import redact_pii
 from app.schemas.models import ALLOWED_MODEL_IDS
 
 MAX_MESSAGE_CHARS = 8000
@@ -14,6 +15,11 @@ MAX_MESSAGES = 50
 class Message(BaseModel):
     role: Literal["system", "user", "assistant"]
     content: str = Field(min_length=1, max_length=MAX_MESSAGE_CHARS)
+
+    def __repr_args__(self):
+        # repr/str попадают в traceback'и и отладочные логи — PII там не нужны.
+        yield "role", self.role
+        yield "content", redact_pii(self.content)
 
 
 class ChatRequest(BaseModel):

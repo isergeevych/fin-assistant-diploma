@@ -16,12 +16,14 @@ dependencies = [
     "redis>=8.1.0",
     "arize-phoenix-otel>=0.17.2",
     "openinference-instrumentation-openai>=0.1.65",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
+    "pytest-mock>=3.16.0",
 ]
 
 [tool.pytest.ini_options]

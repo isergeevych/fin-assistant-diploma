@@ -56,6 +56,7 @@ async def run_tool_call(
     client: AsyncOpenAI | None = None,
     settings: Settings | None = None,
     model: str | None = None,
+    llm_params: dict | None = None,
 ) -> ToolCallResult:
     settings = settings or get_settings()
     client = client or build_client(settings)
@@ -76,7 +77,7 @@ async def run_tool_call(
     for round_no in range(1, MAX_TOOL_ROUNDS + 2):
         started = time.perf_counter()
         response = await client.chat.completions.create(
-            model=model, messages=messages, tools=TOOLS, tool_choice="auto"
+            model=model, messages=messages, tools=TOOLS, tool_choice="auto", **(llm_params or {})
         )
         result.rounds = round_no
         if response.usage:
