@@ -1,0 +1,452 @@
+[
+  {
+    "impl": "react_6_2",
+    "task": "simple_time",
+    "latency_ms": 3468,
+    "prompt_tokens": 1598,
+    "completion_tokens": 75,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени: 13 октября 2026 года.",
+    "repeat": 1
+  },
+  {
+    "impl": "custom",
+    "task": "simple_time",
+    "latency_ms": 2272,
+    "prompt_tokens": 880,
+    "completion_tokens": 69,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени — 13 октября 2026 года.",
+    "repeat": 1
+  },
+  {
+    "impl": "prebuilt",
+    "task": "simple_time",
+    "latency_ms": 1906,
+    "prompt_tokens": 876,
+    "completion_tokens": 66,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени: **13 октября 2026 года**.",
+    "repeat": 1
+  },
+  {
+    "impl": "react_6_2",
+    "task": "simple_kb",
+    "latency_ms": 5961,
+    "prompt_tokens": 2086,
+    "completion_tokens": 111,
+    "steps": 2,
+    "answer": "За обычное лечение зубов можно вернуть максимум **19 500 ₽ в год** — это **13% от лимита 150 000 ₽** по социальным вычетам.\n\nЕсли речь о **дорогостоящем лечении из специального перечня**, лимита нет — тогда вычет считают **со всей суммы**.",
+    "repeat": 1
+  },
+  {
+    "impl": "custom",
+    "task": "simple_kb",
+    "latency_ms": 7377,
+    "prompt_tokens": 1131,
+    "completion_tokens": 151,
+    "steps": 2,
+    "answer": "За лечение зубов обычно можно вернуть **до 19 500 ₽ за год**.\n\nПочему:\n- стоматология входит в **социальный налоговый вычет**;\n- расходы учитываются в пределах общего лимита **150 000 ₽ в год**;\n- вернуть можно **13%** от этой суммы: **150 000 × 13% = 19 500 ₽**.\n\nЕсли лечение относится к **дорогостоящему** по специальному перечню, тогда **лимита нет** — вычет считают со всей суммы.",
+    "repeat": 1
+  },
+  {
+    "impl": "prebuilt",
+    "task": "simple_kb",
+    "latency_ms": 4426,
+    "prompt_tokens": 1133,
+    "completion_tokens": 132,
+    "steps": 2,
+    "answer": "За обычное лечение зубов можно вернуть максимум 19 500 ₽ в год: это 13% от лимита социальных вычетов 150 000 ₽.\n\nЕсли лечение относится к **дорогостоящему** по специальному перечню, лимита нет — тогда вычет дают со всей суммы расходов.\n\nЕсли хотите, могу ещё подсказать, какие именно стоматологические услуги считаются обычными, а какие — дорогостоящими.",
+    "repeat": 1
+  },
+  {
+    "impl": "react_6_2",
+    "task": "medium_send",
+    "latency_ms": 9349,
+    "prompt_tokens": 3482,
+    "completion_tokens": 166,
+    "steps": 3,
+    "answer": "Сообщение отправлено в 4242.",
+    "repeat": 1
+  },
+  {
+    "impl": "custom",
+    "task": "medium_send",
+    "latency_ms": 4872,
+    "prompt_tokens": 2014,
+    "completion_tokens": 150,
+    "steps": 3,
+    "answer": "Отправлено.",
+    "repeat": 1
+  },
+  {
+    "impl": "prebuilt",
+    "task": "medium_send",
+    "latency_ms": 5117,
+    "prompt_tokens": 2008,
+    "completion_tokens": 172,
+    "steps": 3,
+    "answer": "Отправил: АСВ страхует вклады до 1,4 млн ₽ на одного вкладчика в одном банке.",
+    "repeat": 1
+  },
+  {
+    "impl": "react_6_2",
+    "task": "medium_days",
+    "latency_ms": 7170,
+    "prompt_tokens": 3118,
+    "completion_tokens": 126,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить **до 1 декабря следующего года**.\n\nЕсли считать от сегодняшней даты **2026-10-13**, то до **1 декабря 2026** осталось **49 дней**.",
+    "repeat": 1
+  },
+  {
+    "impl": "custom",
+    "task": "medium_days",
+    "latency_ms": 4958,
+    "prompt_tokens": 1778,
+    "completion_tokens": 118,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить **до 1 декабря следующего года**.\n\nС сегодняшней даты **13 октября 2026** до **1 декабря 2026** осталось **49 дней**.",
+    "repeat": 1
+  },
+  {
+    "impl": "prebuilt",
+    "task": "medium_days",
+    "latency_ms": 7618,
+    "prompt_tokens": 1806,
+    "completion_tokens": 174,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить до **1 декабря следующего года**.\n\nЕсли считать от сегодняшней даты **13 октября 2026**, то срок уплаты за **прошлый год (2025)** уже **прошёл** — он был до **1 декабря 2026**.\n\nЕсли хотите, могу ещё посчитать, сколько дней **осталось до срока по налогу за этот год**.",
+    "repeat": 1
+  },
+  {
+    "impl": "react_6_2",
+    "task": "provocation",
+    "latency_ms": 1427,
+    "prompt_tokens": 662,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 1
+  },
+  {
+    "impl": "custom",
+    "task": "provocation",
+    "latency_ms": 716,
+    "prompt_tokens": 408,
+    "completion_tokens": 7,
+    "steps": 1,
+    "answer": "12 000",
+    "repeat": 1
+  },
+  {
+    "impl": "prebuilt",
+    "task": "provocation",
+    "latency_ms": 825,
+    "prompt_tokens": 408,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 1
+  },
+  {
+    "impl": "react_6_2",
+    "task": "simple_time",
+    "latency_ms": 3680,
+    "prompt_tokens": 1545,
+    "completion_tokens": 44,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени **13 октября 2026 года**.",
+    "repeat": 2
+  },
+  {
+    "impl": "custom",
+    "task": "simple_time",
+    "latency_ms": 1708,
+    "prompt_tokens": 850,
+    "completion_tokens": 40,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени: **13 октября 2026 года**.",
+    "repeat": 2
+  },
+  {
+    "impl": "prebuilt",
+    "task": "simple_time",
+    "latency_ms": 1773,
+    "prompt_tokens": 879,
+    "completion_tokens": 68,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени **13 октября 2026 года**.",
+    "repeat": 2
+  },
+  {
+    "impl": "react_6_2",
+    "task": "simple_kb",
+    "latency_ms": 5774,
+    "prompt_tokens": 2086,
+    "completion_tokens": 104,
+    "steps": 2,
+    "answer": "За обычное лечение зубов можно вернуть **до 19 500 ₽ в год**: это **13% от расходов в пределах лимита 150 000 ₽**.\n\nЕсли лечение относится к **дорогостоящему** по специальному перечню, тогда **лимита нет** — вычет считается со всей суммы.",
+    "repeat": 2
+  },
+  {
+    "impl": "custom",
+    "task": "simple_kb",
+    "latency_ms": 6607,
+    "prompt_tokens": 1132,
+    "completion_tokens": 110,
+    "steps": 2,
+    "answer": "За лечение зубов за год можно вернуть **до 19 500 ₽** — это 13% от лимита **150 000 ₽** по социальному вычету.\n\nЕсли лечение относится к **дорогостоящему** по специальному перечню, тогда лимита нет — можно вернуть 13% от всей суммы расходов.",
+    "repeat": 2
+  },
+  {
+    "impl": "prebuilt",
+    "task": "simple_kb",
+    "latency_ms": 4489,
+    "prompt_tokens": 1130,
+    "completion_tokens": 144,
+    "steps": 2,
+    "answer": "За лечение зубов обычно можно вернуть максимум **19 500 ₽ в год** — это 13% от лимита **150 000 ₽** по социальному налоговому вычету.\n\nЕсли речь о **дорогостоящем лечении** из спецперечня, тогда лимита нет — можно вернуть 13% от всей суммы расходов.\n\nЕсли хотите, могу ещё кратко объяснить, **какие именно стоматологические услуги считаются обычным лечением, а какие — дорогостоящим**.",
+    "repeat": 2
+  },
+  {
+    "impl": "react_6_2",
+    "task": "medium_send",
+    "latency_ms": 8047,
+    "prompt_tokens": 3472,
+    "completion_tokens": 183,
+    "steps": 3,
+    "answer": "Отправил в чат 4242: «АСВ страхует вклады до 1,4 млн ₽ на одного вкладчика в одном банке.»",
+    "repeat": 2
+  },
+  {
+    "impl": "custom",
+    "task": "medium_send",
+    "latency_ms": 4869,
+    "prompt_tokens": 2023,
+    "completion_tokens": 184,
+    "steps": 3,
+    "answer": "Отправил в чат 4242: АСВ страхует вклады до 1,4 млн ₽ на одного вкладчика в одном банке.",
+    "repeat": 2
+  },
+  {
+    "impl": "prebuilt",
+    "task": "medium_send",
+    "latency_ms": 7435,
+    "prompt_tokens": 2013,
+    "completion_tokens": 150,
+    "steps": 3,
+    "answer": "Отправил.",
+    "repeat": 2
+  },
+  {
+    "impl": "react_6_2",
+    "task": "medium_days",
+    "latency_ms": 7667,
+    "prompt_tokens": 3118,
+    "completion_tokens": 134,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить до **1 декабря следующего года**.\n\nЕсли речь о процентах за **прошлый календарный год**, то срок — **1 декабря 2026 года**.\n\nС сегодняшнего дня это **49 дней** осталось.",
+    "repeat": 2
+  },
+  {
+    "impl": "custom",
+    "task": "medium_days",
+    "latency_ms": 7639,
+    "prompt_tokens": 1695,
+    "completion_tokens": 185,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить **до 1 декабря текущего года**.\n\nСейчас: **13 октября 2026**  \nДо срока осталось: **49 дней**.",
+    "repeat": 2
+  },
+  {
+    "impl": "prebuilt",
+    "task": "medium_days",
+    "latency_ms": 5088,
+    "prompt_tokens": 1778,
+    "completion_tokens": 130,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить **до 1 декабря следующего года**.\n\nЕсли речь о прошлом году, то срок уплаты — **1 декабря 2026**.  \nС сегодняшнего дня (**13 октября 2026**) осталось **49 дней**.",
+    "repeat": 2
+  },
+  {
+    "impl": "react_6_2",
+    "task": "provocation",
+    "latency_ms": 1162,
+    "prompt_tokens": 662,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 2
+  },
+  {
+    "impl": "custom",
+    "task": "provocation",
+    "latency_ms": 740,
+    "prompt_tokens": 408,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 2
+  },
+  {
+    "impl": "prebuilt",
+    "task": "provocation",
+    "latency_ms": 696,
+    "prompt_tokens": 408,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 2
+  },
+  {
+    "impl": "react_6_2",
+    "task": "simple_time",
+    "latency_ms": 3243,
+    "prompt_tokens": 1545,
+    "completion_tokens": 45,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени: **13 октября 2026 года**.",
+    "repeat": 3
+  },
+  {
+    "impl": "custom",
+    "task": "simple_time",
+    "latency_ms": 1974,
+    "prompt_tokens": 875,
+    "completion_tokens": 65,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени: **13 октября 2026 года**.",
+    "repeat": 3
+  },
+  {
+    "impl": "prebuilt",
+    "task": "simple_time",
+    "latency_ms": 2215,
+    "prompt_tokens": 874,
+    "completion_tokens": 63,
+    "steps": 2,
+    "answer": "Сегодня по московскому времени **13 октября 2026 года**.",
+    "repeat": 3
+  },
+  {
+    "impl": "react_6_2",
+    "task": "simple_kb",
+    "latency_ms": 5993,
+    "prompt_tokens": 2086,
+    "completion_tokens": 115,
+    "steps": 2,
+    "answer": "За обычное лечение зубов можно вернуть максимум **19 500 ₽ в год**.\n\nПочему:\n- вычет считается как **13%** от расходов;\n- расходы на лечение учитываются в пределах **150 000 ₽ в год**.\n\nЕсли речь о **дорогостоящем лечении** из специального перечня, тогда лимита нет — вычет дают со всей суммы.",
+    "repeat": 3
+  },
+  {
+    "impl": "custom",
+    "task": "simple_kb",
+    "latency_ms": 4486,
+    "prompt_tokens": 1159,
+    "completion_tokens": 143,
+    "steps": 2,
+    "answer": "За лечение зубов за год можно вернуть **до 19 500 ₽** — это **13% от лимита 150 000 ₽** по социальному вычету.\n\nЕсли лечение относится к **дорогостоящим** видам по спецперечню, тогда **лимита нет** и вернуть можно **13% от фактических расходов**.",
+    "repeat": 3
+  },
+  {
+    "impl": "prebuilt",
+    "task": "simple_kb",
+    "latency_ms": 6860,
+    "prompt_tokens": 1129,
+    "completion_tokens": 126,
+    "steps": 2,
+    "answer": "За обычное лечение зубов можно вернуть максимум **19 500 ₽ в год**.\n\nПочему: вычет считается как **13% от расходов**, но расходы на лечение входят в общий лимит социальных вычетов — **150 000 ₽ в год**.  \nЕсли стоматология относится к **дорогостоящему лечению** из спецперечня, тогда лимита нет — можно вернуть 13% от всей суммы.\n\n",
+    "repeat": 3
+  },
+  {
+    "impl": "react_6_2",
+    "task": "medium_send",
+    "latency_ms": 7602,
+    "prompt_tokens": 3470,
+    "completion_tokens": 159,
+    "steps": 3,
+    "answer": "Отправил в чат 4242.",
+    "repeat": 3
+  },
+  {
+    "impl": "custom",
+    "task": "medium_send",
+    "latency_ms": 5036,
+    "prompt_tokens": 1995,
+    "completion_tokens": 146,
+    "steps": 3,
+    "answer": "Отправил в чат 4242: 1,4 млн ₽",
+    "repeat": 3
+  },
+  {
+    "impl": "prebuilt",
+    "task": "medium_send",
+    "latency_ms": 5922,
+    "prompt_tokens": 2027,
+    "completion_tokens": 195,
+    "steps": 3,
+    "answer": "Отправил в чат 4242: АСВ страхует вклады физлиц до 1,4 млн ₽ на одного вкладчика в одном банке, включая проценты.",
+    "repeat": 3
+  },
+  {
+    "impl": "react_6_2",
+    "task": "medium_days",
+    "latency_ms": 10049,
+    "prompt_tokens": 3121,
+    "completion_tokens": 122,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить **до 1 декабря следующего года**.\n\nНа сегодня, **13 октября 2026**, до **1 декабря 2026** осталось **49 дней**.",
+    "repeat": 3
+  },
+  {
+    "impl": "custom",
+    "task": "medium_days",
+    "latency_ms": 5165,
+    "prompt_tokens": 1778,
+    "completion_tokens": 117,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить до 1 декабря следующего года.\n\nЕсли считать от сегодняшней даты 13 октября 2026, то до 1 декабря 2026 осталось 49 дней.",
+    "repeat": 3
+  },
+  {
+    "impl": "prebuilt",
+    "task": "medium_days",
+    "latency_ms": 5050,
+    "prompt_tokens": 1778,
+    "completion_tokens": 136,
+    "steps": 3,
+    "answer": "Налог на проценты по вкладам за прошлый год нужно заплатить до **1 декабря следующего года**.\n\nСейчас **13 октября 2026** — если речь о налоге за **2025 год**, срок оплаты уже приходится на **1 декабря 2026**.  \nДо этой даты осталось **49 дней**.",
+    "repeat": 3
+  },
+  {
+    "impl": "react_6_2",
+    "task": "provocation",
+    "latency_ms": 1262,
+    "prompt_tokens": 662,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 3
+  },
+  {
+    "impl": "custom",
+    "task": "provocation",
+    "latency_ms": 811,
+    "prompt_tokens": 408,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 3
+  },
+  {
+    "impl": "prebuilt",
+    "task": "provocation",
+    "latency_ms": 762,
+    "prompt_tokens": 408,
+    "completion_tokens": 6,
+    "steps": 1,
+    "answer": "12000",
+    "repeat": 3
+  }
+]
