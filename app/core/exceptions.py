@@ -29,6 +29,20 @@ class LLMAuthError(LLMError):
     http_status = 502
 
 
+class InputRejectedError(LLMError):
+    """Б3.8: ввод не прошёл input_validator — в LLM не отправляем."""
+
+    code = "input_rejected"
+    http_status = 400
+
+
+class OutputBlockedError(LLMError):
+    """Б3.8: ответ модели не прошёл output_filter (утечка системного промпта / canary)."""
+
+    code = "output_blocked"
+    http_status = 502
+
+
 class LLMUnavailableError(LLMError):
     """Все провайдеры цепочки недоступны (или их circuit breaker открыт)."""
 

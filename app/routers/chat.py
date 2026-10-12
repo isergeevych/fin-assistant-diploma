@@ -13,6 +13,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 log = structlog.get_logger("chat")
 
 ERROR_RESPONSES = {
+    400: {"model": ErrorResponse, "description": "Ввод отклонён фильтром безопасности (input_rejected)"},
     422: {"model": ErrorResponse, "description": "Ошибка валидации запроса"},
     429: {"model": ErrorResponse, "description": "Провайдер LLM ограничил частоту запросов"},
     502: {"model": ErrorResponse, "description": "Провайдер LLM недоступен или ошибка авторизации"},
@@ -42,6 +43,9 @@ async def chat(req: ChatRequest, service: LLMServiceDep) -> ChatResponse:
     responses={200: {"content": {"text/event-stream": {}}, "description": "SSE-поток"}, **ERROR_RESPONSES},
 )
 async def chat_stream(req: ChatRequest, service: LLMServiceDep) -> StreamingResponse:
+    # Проверка входа ДО отправки заголовков: отказ должен прийти честным HTTP 400, а не 200 с ошибкой в потоке.
+    service.check_input(req)
+
     async def events() -> AsyncIterator[str]:
         try:
             async for delta in service.stream(req):

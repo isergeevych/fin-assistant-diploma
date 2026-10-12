@@ -27,8 +27,14 @@ LLMClientDep = Annotated[AsyncLLMClient, Depends(get_openai)]
 CacheDep = Annotated[Redis, Depends(get_cache)]
 
 
-def get_llm_service(llm: LLMClientDep, cache: CacheDep, settings: SettingsDep) -> LLMService:
-    return LLMService(llm, cache, settings)
+def get_canary(request: Request) -> str:
+    return getattr(request.app.state, "canary", "")
+
+
+def get_llm_service(
+    llm: LLMClientDep, cache: CacheDep, settings: SettingsDep, canary: Annotated[str, Depends(get_canary)]
+) -> LLMService:
+    return LLMService(llm, cache, settings, canary)
 
 
 LLMServiceDep = Annotated[LLMService, Depends(get_llm_service)]

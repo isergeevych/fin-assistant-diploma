@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
     log_level: str = "INFO"
 
+    # --- Безопасность (Б3.8) ---
+    # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
+    security_enabled: bool = True
+
 
 @lru_cache
 def get_settings() -> Settings:
