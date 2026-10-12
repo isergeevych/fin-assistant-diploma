@@ -39,7 +39,8 @@ def build_judge(settings: Settings):
     base_url = settings.eval_judge_base_url or settings.rag_llm_base_url or settings.llm.base_url
     key = (settings.eval_judge_api_key or settings.rag_llm_api_key or settings.llm.api_key).get_secret_value()
     model = settings.eval_judge_model or settings.rag_llm_model or settings.llm.default_model
-    extra = {"extra_body": {"reasoning_effort": settings.rag_llm_reasoning_effort}} if settings.rag_llm_reasoning_effort else {}
+    effort = settings.eval_judge_reasoning_effort or settings.rag_llm_reasoning_effort
+    extra = {"extra_body": {"reasoning_effort": effort}} if effort else {}
     return llm_factory(model, provider="openai", client=AsyncOpenAI(base_url=base_url, api_key=key), max_tokens=3000,
                        **extra), model
 

@@ -139,6 +139,8 @@ class Settings(BaseSettings):
     eval_judge_base_url: str | None = None
     eval_judge_model: str | None = None
     eval_judge_api_key: SecretStr | None = None
+    # Gemini не даёт выключить reasoning ("none" → 400), поэтому у судьи своя настройка; пусто — как у RAG-LLM
+    eval_judge_reasoning_effort: str | None = None
     phoenix_llamaindex_tracing: bool = False  # LlamaIndexInstrumentor в lifespan (Б5.6)
 
     # --- Агенты (модуль 6) ---
