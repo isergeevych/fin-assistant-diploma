@@ -2,7 +2,10 @@
 
 import asyncio
 
-import httpx2
+try:  # openai SDK 3.x работает поверх httpx2, 2.x (его требует LlamaIndex) — поверх httpx
+    import httpx2
+except ImportError:
+    import httpx as httpx2
 import openai
 import pytest
 from openai.types.chat import ChatCompletion
