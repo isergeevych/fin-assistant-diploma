@@ -112,9 +112,14 @@ class Settings(BaseSettings):
     rag_data_dir: Path = PROJECT_ROOT / "data" / "rag-block-03"
     rag_collection: str = "rag_block_03"            # LlamaIndex (формат нод _node_content)
     rag_collection_bare: str = "rag_block_03_bare"  # bare-metal (плоский payload)
+    # Итог Б5.4 (docs/chunking_experiment.md): recursive (SentenceSplitter), 512/64, retrieval top-10 → rerank top-5
+    rag_chunk_strategy: Literal["fixed", "recursive", "semantic"] = "recursive"
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64
     rag_top_k: int = 3
+    rag_retrieval_top_k: int = 10
+    rag_rerank_enabled: bool = True  # нужен extra `rerank` (torch); без него — только векторный поиск
+    rag_rerank_top_n: int = 5
     rag_score_threshold: float = 0.35  # ниже — честный отказ без вызова LLM (калибровка — docs/rag.md)
     # LLM для генерации ответа. Пусто — берётся основной LLM (OpenRouter); для локальной работы — Ollama.
     rag_llm_base_url: str | None = None

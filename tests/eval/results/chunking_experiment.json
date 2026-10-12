@@ -1,0 +1,1315 @@
+{
+  "strategies": {
+    "fixed": {
+      "chunks_total": 56,
+      "chunks_per_doc": 1,
+      "avg_chunk_chars": 510,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 19.0,
+      "per_question": [
+        {
+          "id": "r01",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/social_deduction_medical.pdf",
+            "taxes/sport_deduction.md",
+            "taxes/social_deduction_education.md"
+          ]
+        },
+        {
+          "id": "r02",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_insurance_asv.pdf",
+            "deposits_credits/deposit_vs_savings_account.md",
+            "budgeting/emergency_fund.pdf"
+          ]
+        },
+        {
+          "id": "r03",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/self_employed_npd.docx",
+            "taxes/ndfl_progressive_scale.md",
+            "taxes/deposit_interest_tax.md"
+          ]
+        },
+        {
+          "id": "r04",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/ndfl_progressive_scale.md",
+            "budgeting/rule_50_30_20.html",
+            "taxes/self_employed_npd.docx"
+          ]
+        },
+        {
+          "id": "r05",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_self_ban.md",
+            "fraud_security/elderly_relatives.md",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r06",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/stolen_card_actions.pdf",
+            "fraud_security/drops.docx",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r07",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/export_reports.md",
+            "budgeting/expense_tracking.md",
+            "budgeting/envelope_method.md"
+          ]
+        },
+        {
+          "id": "r08",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/import_statements.docx",
+            "fraud_security/sms_codes.md",
+            "fraud_security/fake_bank_security_call.html"
+          ]
+        },
+        {
+          "id": "r09",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/deposit_interest_tax.md",
+            "taxes/self_employed_npd.docx",
+            "taxes/ndfl_progressive_scale.md"
+          ]
+        },
+        {
+          "id": "r10",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/iis3.pdf",
+            "deposits_credits/deposit_insurance_asv.pdf",
+            "taxes/property_deduction.pdf"
+          ]
+        },
+        {
+          "id": "r11",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_history.md",
+            "deposits_credits/credit_self_ban.md",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r12",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 0.5,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/rule_50_30_20.html",
+            "fraud_security/cooling_period.md",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r13",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/crash_troubleshooting.md",
+            "app_faq/budgets_alerts.md",
+            "app_faq/tariffs_v2.pdf"
+          ]
+        },
+        {
+          "id": "r14",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 0.3333333333333333,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/tariffs_v1.md",
+            "budgeting/subscriptions_audit.md",
+            "app_faq/tariffs_v2.pdf"
+          ]
+        },
+        {
+          "id": "r15",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_vs_savings_account.md",
+            "budgeting/emergency_fund.pdf",
+            "budgeting/financial_goals.md"
+          ]
+        },
+        {
+          "id": "r16",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/annuity_vs_differentiated.md",
+            "deposits_credits/refinancing.md",
+            "deposits_credits/deposit_vs_savings_account.md"
+          ]
+        },
+        {
+          "id": "r17",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/debt_strategies.md",
+            "deposits_credits/early_repayment.docx",
+            "budgeting/big_purchase.md"
+          ]
+        },
+        {
+          "id": "r18",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/microloans_risk.md",
+            "deposits_credits/refinancing.md",
+            "budgeting/big_purchase.md"
+          ]
+        },
+        {
+          "id": "r19",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/big_purchase.md",
+            "deposits_credits/early_repayment.docx",
+            "budgeting/financial_goals.md"
+          ]
+        },
+        {
+          "id": "r20",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/property_deduction.pdf",
+            "taxes/property_sale_tax.md",
+            "deposits_credits/mortgage_basics.md"
+          ]
+        },
+        {
+          "id": "r21",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/fake_bank_security_call.html",
+            "fraud_security/sms_codes.md",
+            "fraud_security/stolen_card_actions.pdf"
+          ]
+        },
+        {
+          "id": "r22",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 0.6666666666666666,
+          "top3": [
+            "budgeting/rule_50_30_20.html",
+            "deposits_credits/annuity_vs_differentiated.md",
+            "budgeting/family_budget.docx"
+          ]
+        },
+        {
+          "id": "r23",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/sport_deduction.md",
+            "taxes/social_deduction_education.md",
+            "taxes/social_deduction_medical.pdf"
+          ]
+        },
+        {
+          "id": "r24",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/declaration_3ndfl.docx",
+            "taxes/tax_refund_timeline.md",
+            "fraud_security/cooling_period.md"
+          ]
+        }
+      ]
+    },
+    "recursive": {
+      "chunks_total": 56,
+      "chunks_per_doc": 1,
+      "avg_chunk_chars": 510,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 5.7,
+      "per_question": [
+        {
+          "id": "r01",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/social_deduction_medical.pdf",
+            "taxes/sport_deduction.md",
+            "taxes/social_deduction_education.md"
+          ]
+        },
+        {
+          "id": "r02",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_insurance_asv.pdf",
+            "deposits_credits/deposit_vs_savings_account.md",
+            "budgeting/emergency_fund.pdf"
+          ]
+        },
+        {
+          "id": "r03",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/self_employed_npd.docx",
+            "taxes/ndfl_progressive_scale.md",
+            "taxes/deposit_interest_tax.md"
+          ]
+        },
+        {
+          "id": "r04",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/ndfl_progressive_scale.md",
+            "budgeting/rule_50_30_20.html",
+            "taxes/self_employed_npd.docx"
+          ]
+        },
+        {
+          "id": "r05",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_self_ban.md",
+            "fraud_security/elderly_relatives.md",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r06",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/stolen_card_actions.pdf",
+            "fraud_security/drops.docx",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r07",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/export_reports.md",
+            "budgeting/expense_tracking.md",
+            "budgeting/envelope_method.md"
+          ]
+        },
+        {
+          "id": "r08",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/import_statements.docx",
+            "fraud_security/sms_codes.md",
+            "fraud_security/fake_bank_security_call.html"
+          ]
+        },
+        {
+          "id": "r09",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/deposit_interest_tax.md",
+            "taxes/self_employed_npd.docx",
+            "taxes/ndfl_progressive_scale.md"
+          ]
+        },
+        {
+          "id": "r10",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/iis3.pdf",
+            "deposits_credits/deposit_insurance_asv.pdf",
+            "taxes/property_deduction.pdf"
+          ]
+        },
+        {
+          "id": "r11",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_history.md",
+            "deposits_credits/credit_self_ban.md",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r12",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 0.5,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/rule_50_30_20.html",
+            "fraud_security/cooling_period.md",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r13",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/crash_troubleshooting.md",
+            "app_faq/budgets_alerts.md",
+            "app_faq/tariffs_v2.pdf"
+          ]
+        },
+        {
+          "id": "r14",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 0.3333333333333333,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/tariffs_v1.md",
+            "budgeting/subscriptions_audit.md",
+            "app_faq/tariffs_v2.pdf"
+          ]
+        },
+        {
+          "id": "r15",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_vs_savings_account.md",
+            "budgeting/emergency_fund.pdf",
+            "budgeting/financial_goals.md"
+          ]
+        },
+        {
+          "id": "r16",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/annuity_vs_differentiated.md",
+            "deposits_credits/refinancing.md",
+            "deposits_credits/deposit_vs_savings_account.md"
+          ]
+        },
+        {
+          "id": "r17",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/debt_strategies.md",
+            "deposits_credits/early_repayment.docx",
+            "budgeting/big_purchase.md"
+          ]
+        },
+        {
+          "id": "r18",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/microloans_risk.md",
+            "deposits_credits/refinancing.md",
+            "budgeting/big_purchase.md"
+          ]
+        },
+        {
+          "id": "r19",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/big_purchase.md",
+            "deposits_credits/early_repayment.docx",
+            "budgeting/financial_goals.md"
+          ]
+        },
+        {
+          "id": "r20",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/property_deduction.pdf",
+            "taxes/property_sale_tax.md",
+            "deposits_credits/mortgage_basics.md"
+          ]
+        },
+        {
+          "id": "r21",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/fake_bank_security_call.html",
+            "fraud_security/sms_codes.md",
+            "fraud_security/stolen_card_actions.pdf"
+          ]
+        },
+        {
+          "id": "r22",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 0.6666666666666666,
+          "top3": [
+            "budgeting/rule_50_30_20.html",
+            "deposits_credits/annuity_vs_differentiated.md",
+            "budgeting/family_budget.docx"
+          ]
+        },
+        {
+          "id": "r23",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/sport_deduction.md",
+            "taxes/social_deduction_education.md",
+            "taxes/social_deduction_medical.pdf"
+          ]
+        },
+        {
+          "id": "r24",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/declaration_3ndfl.docx",
+            "taxes/tax_refund_timeline.md",
+            "fraud_security/cooling_period.md"
+          ]
+        }
+      ]
+    },
+    "semantic": {
+      "chunks_total": 112,
+      "chunks_per_doc": 2,
+      "avg_chunk_chars": 253,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 2.9,
+      "per_question": [
+        {
+          "id": "r01",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/social_deduction_medical.pdf",
+            "taxes/sport_deduction.md",
+            "taxes/iis3.pdf"
+          ]
+        },
+        {
+          "id": "r02",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_insurance_asv.pdf",
+            "taxes/iis3.pdf",
+            "taxes/social_deduction_medical.pdf"
+          ]
+        },
+        {
+          "id": "r03",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/self_employed_npd.docx",
+            "taxes/ndfl_progressive_scale.md",
+            "taxes/deposit_interest_tax.md"
+          ]
+        },
+        {
+          "id": "r04",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/ndfl_progressive_scale.md",
+            "taxes/self_employed_npd.docx",
+            "budgeting/rule_50_30_20.html"
+          ]
+        },
+        {
+          "id": "r05",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_self_ban.md",
+            "fraud_security/elderly_relatives.md",
+            "fraud_security/drops.docx"
+          ]
+        },
+        {
+          "id": "r06",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/stolen_card_actions.pdf",
+            "fraud_security/fake_bank_security_call.html",
+            "fraud_security/drops.docx"
+          ]
+        },
+        {
+          "id": "r07",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/export_reports.md",
+            "budgeting/expense_tracking.md",
+            "budgeting/envelope_method.md"
+          ]
+        },
+        {
+          "id": "r08",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/import_statements.docx",
+            "fraud_security/phishing_sites.html",
+            "fraud_security/fake_bank_security_call.html"
+          ]
+        },
+        {
+          "id": "r09",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/deposit_interest_tax.md",
+            "taxes/ndfl_progressive_scale.md",
+            "taxes/self_employed_npd.docx"
+          ]
+        },
+        {
+          "id": "r10",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/iis3.pdf",
+            "taxes/social_deduction_medical.pdf",
+            "taxes/property_deduction.pdf"
+          ]
+        },
+        {
+          "id": "r11",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_history.md",
+            "deposits_credits/credit_self_ban.md",
+            "taxes/tax_refund_timeline.md"
+          ]
+        },
+        {
+          "id": "r12",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 0.5,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/rule_50_30_20.html",
+            "fraud_security/cooling_period.md",
+            "deposits_credits/annuity_vs_differentiated.md"
+          ]
+        },
+        {
+          "id": "r13",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/crash_troubleshooting.md",
+            "app_faq/tariffs_v2.pdf",
+            "fraud_security/phishing_sites.html"
+          ]
+        },
+        {
+          "id": "r14",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 0.3333333333333333,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/subscriptions_audit.md",
+            "app_faq/tariffs_v1.md",
+            "app_faq/tariffs_v2.pdf"
+          ]
+        },
+        {
+          "id": "r15",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_vs_savings_account.md",
+            "budgeting/emergency_fund.pdf",
+            "budgeting/big_purchase.md"
+          ]
+        },
+        {
+          "id": "r16",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/annuity_vs_differentiated.md",
+            "deposits_credits/refinancing.md",
+            "deposits_credits/deposit_vs_savings_account.md"
+          ]
+        },
+        {
+          "id": "r17",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/debt_strategies.md",
+            "deposits_credits/early_repayment.docx",
+            "deposits_credits/annuity_vs_differentiated.md"
+          ]
+        },
+        {
+          "id": "r18",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/microloans_risk.md",
+            "deposits_credits/annuity_vs_differentiated.md",
+            "budgeting/debt_strategies.md"
+          ]
+        },
+        {
+          "id": "r19",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/big_purchase.md",
+            "deposits_credits/early_repayment.docx",
+            "deposits_credits/deposit_vs_savings_account.md"
+          ]
+        },
+        {
+          "id": "r20",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/property_deduction.pdf",
+            "taxes/property_sale_tax.md",
+            "deposits_credits/mortgage_basics.md"
+          ]
+        },
+        {
+          "id": "r21",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/fake_bank_security_call.html",
+            "fraud_security/sms_codes.md",
+            "fraud_security/stolen_card_actions.pdf"
+          ]
+        },
+        {
+          "id": "r22",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 0.6666666666666666,
+          "top3": [
+            "budgeting/rule_50_30_20.html",
+            "deposits_credits/annuity_vs_differentiated.md",
+            "deposits_credits/deposit_insurance_asv.pdf"
+          ]
+        },
+        {
+          "id": "r23",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/sport_deduction.md",
+            "taxes/social_deduction_education.md",
+            "taxes/social_deduction_medical.pdf"
+          ]
+        },
+        {
+          "id": "r24",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/declaration_3ndfl.docx",
+            "taxes/property_sale_tax.md",
+            "taxes/social_deduction_education.md"
+          ]
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "without": {
+      "chunks_total": 56,
+      "chunks_per_doc": 1,
+      "avg_chunk_chars": 510,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 19.0
+    },
+    "with": {
+      "hit_rate@5": 1.0,
+      "mrr@10": 1.0,
+      "recall@10": 1.0,
+      "latency_ms": 3604.0,
+      "per_question": [
+        {
+          "id": "r01",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/social_deduction_medical.pdf",
+            "taxes/social_deduction_education.md",
+            "taxes/property_deduction.pdf"
+          ]
+        },
+        {
+          "id": "r02",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_insurance_asv.pdf",
+            "taxes/iis3.pdf",
+            "taxes/property_deduction.pdf"
+          ]
+        },
+        {
+          "id": "r03",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/self_employed_npd.docx",
+            "taxes/ndfl_progressive_scale.md",
+            "taxes/deposit_interest_tax.md"
+          ]
+        },
+        {
+          "id": "r04",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/ndfl_progressive_scale.md",
+            "taxes/self_employed_npd.docx",
+            "taxes/deposit_interest_tax.md"
+          ]
+        },
+        {
+          "id": "r05",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_self_ban.md",
+            "fraud_security/elderly_relatives.md",
+            "fraud_security/sms_codes.md"
+          ]
+        },
+        {
+          "id": "r06",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/stolen_card_actions.pdf",
+            "fraud_security/fake_bank_security_call.html",
+            "fraud_security/drops.docx"
+          ]
+        },
+        {
+          "id": "r07",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/export_reports.md",
+            "budgeting/expense_tracking.md",
+            "budgeting/envelope_method.md"
+          ]
+        },
+        {
+          "id": "r08",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/import_statements.docx",
+            "app_faq/export_reports.md",
+            "deposits_credits/credit_history.md"
+          ]
+        },
+        {
+          "id": "r09",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/deposit_interest_tax.md",
+            "deposits_credits/key_rate.html",
+            "deposits_credits/deposit_insurance_asv.pdf"
+          ]
+        },
+        {
+          "id": "r10",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/iis3.pdf",
+            "deposits_credits/deposit_insurance_asv.pdf",
+            "taxes/property_deduction.pdf"
+          ]
+        },
+        {
+          "id": "r11",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/credit_history.md",
+            "deposits_credits/credit_self_ban.md",
+            "app_faq/telegram_bot.md"
+          ]
+        },
+        {
+          "id": "r12",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/cooling_period.md",
+            "taxes/tax_refund_timeline.md",
+            "deposits_credits/early_repayment.docx"
+          ]
+        },
+        {
+          "id": "r13",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/crash_troubleshooting.md",
+            "fraud_security/stolen_card_actions.pdf",
+            "budgeting/envelope_method.md"
+          ]
+        },
+        {
+          "id": "r14",
+          "type": "fact",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "app_faq/tariffs_v2.pdf",
+            "budgeting/subscriptions_audit.md",
+            "app_faq/tariffs_v1.md"
+          ]
+        },
+        {
+          "id": "r15",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/deposit_vs_savings_account.md",
+            "budgeting/emergency_fund.pdf",
+            "budgeting/financial_goals.md"
+          ]
+        },
+        {
+          "id": "r16",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/annuity_vs_differentiated.md",
+            "budgeting/big_purchase.md",
+            "deposits_credits/refinancing.md"
+          ]
+        },
+        {
+          "id": "r17",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/debt_strategies.md",
+            "deposits_credits/refinancing.md",
+            "deposits_credits/annuity_vs_differentiated.md"
+          ]
+        },
+        {
+          "id": "r18",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "deposits_credits/microloans_risk.md",
+            "deposits_credits/credit_psk.pdf",
+            "budgeting/debt_strategies.md"
+          ]
+        },
+        {
+          "id": "r19",
+          "type": "compare",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/big_purchase.md",
+            "budgeting/financial_goals.md",
+            "deposits_credits/deposit_vs_savings_account.md"
+          ]
+        },
+        {
+          "id": "r20",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/property_deduction.pdf",
+            "deposits_credits/mortgage_basics.md",
+            "taxes/property_sale_tax.md"
+          ]
+        },
+        {
+          "id": "r21",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "fraud_security/stolen_card_actions.pdf",
+            "fraud_security/fake_bank_security_call.html",
+            "fraud_security/elderly_relatives.md"
+          ]
+        },
+        {
+          "id": "r22",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "budgeting/rule_50_30_20.html",
+            "budgeting/family_budget.docx",
+            "budgeting/emergency_fund.pdf"
+          ]
+        },
+        {
+          "id": "r23",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/social_deduction_education.md",
+            "taxes/sport_deduction.md",
+            "taxes/social_deduction_medical.pdf"
+          ]
+        },
+        {
+          "id": "r24",
+          "type": "multi",
+          "hit@5": 1.0,
+          "rr@10": 1.0,
+          "recall@10": 1.0,
+          "top3": [
+            "taxes/declaration_3ndfl.docx",
+            "taxes/tax_refund_timeline.md",
+            "taxes/children_standard_deduction.html"
+          ]
+        }
+      ]
+    }
+  },
+  "grid": [
+    {
+      "strategy": "fixed",
+      "chunk_size": 256,
+      "overlap": 32,
+      "top_k": 10,
+      "chunks_total": 72,
+      "chunks_per_doc": 1.29,
+      "avg_chunk_chars": 412,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.944,
+      "recall@10": 0.986,
+      "latency_ms": 5.0
+    },
+    {
+      "strategy": "fixed",
+      "chunk_size": 256,
+      "overlap": 32,
+      "top_k": 20,
+      "chunks_total": 72,
+      "chunks_per_doc": 1.29,
+      "avg_chunk_chars": 412,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.944,
+      "recall@10": 0.986,
+      "latency_ms": 11.4
+    },
+    {
+      "strategy": "fixed",
+      "chunk_size": 256,
+      "overlap": 64,
+      "top_k": 10,
+      "chunks_total": 72,
+      "chunks_per_doc": 1.29,
+      "avg_chunk_chars": 427,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 2.9
+    },
+    {
+      "strategy": "fixed",
+      "chunk_size": 256,
+      "overlap": 64,
+      "top_k": 20,
+      "chunks_total": 72,
+      "chunks_per_doc": 1.29,
+      "avg_chunk_chars": 427,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 6.7
+    },
+    {
+      "strategy": "fixed",
+      "chunk_size": 512,
+      "overlap": 32,
+      "top_k": 10,
+      "chunks_total": 56,
+      "chunks_per_doc": 1,
+      "avg_chunk_chars": 510,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 3.6
+    },
+    {
+      "strategy": "fixed",
+      "chunk_size": 512,
+      "overlap": 32,
+      "top_k": 20,
+      "chunks_total": 56,
+      "chunks_per_doc": 1,
+      "avg_chunk_chars": 510,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 5.5
+    },
+    {
+      "strategy": "fixed",
+      "chunk_size": 512,
+      "overlap": 64,
+      "top_k": 10,
+      "chunks_total": 56,
+      "chunks_per_doc": 1,
+      "avg_chunk_chars": 510,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 3.5
+    },
+    {
+      "strategy": "fixed",
+      "chunk_size": 512,
+      "overlap": 64,
+      "top_k": 20,
+      "chunks_total": 56,
+      "chunks_per_doc": 1,
+      "avg_chunk_chars": 510,
+      "hit_rate@5": 1.0,
+      "mrr@10": 0.951,
+      "recall@10": 0.986,
+      "latency_ms": 9.1
+    }
+  ],
+  "best_strategy": "fixed"
+}

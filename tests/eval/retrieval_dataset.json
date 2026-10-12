@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "description": "Golden dataset для оценки retrieval (Б5.4): вопрос → 1–3 эталонных документа (пути относительно data/). Типы: fact — точечный факт, compare — сравнение, multi — многошаговый ответ из нескольких документов.",
+  "items": [
+    {"id": "r01", "type": "fact", "question": "Сколько максимум можно вернуть за лечение зубов за год?", "relevant_doc_ids": ["taxes/social_deduction_medical.pdf"]},
+    {"id": "r02", "type": "fact", "question": "До какой суммы государство гарантирует возврат вклада?", "relevant_doc_ids": ["deposits_credits/deposit_insurance_asv.pdf"]},
+    {"id": "r03", "type": "fact", "question": "Какой налог платит самозанятый, если работает с компаниями?", "relevant_doc_ids": ["taxes/self_employed_npd.docx"]},
+    {"id": "r04", "type": "fact", "question": "По какой ставке облагается доход 3 миллиона в год?", "relevant_doc_ids": ["taxes/ndfl_progressive_scale.md"]},
+    {"id": "r05", "type": "fact", "question": "Можно ли запретить оформлять на меня кредиты?", "relevant_doc_ids": ["deposits_credits/credit_self_ban.md"]},
+    {"id": "r06", "type": "fact", "question": "Что делать, если с карты списали деньги без моего ведома?", "relevant_doc_ids": ["fraud_security/stolen_card_actions.pdf"]},
+    {"id": "r07", "type": "fact", "question": "Как выгрузить свои траты в Excel?", "relevant_doc_ids": ["app_faq/export_reports.md"]},
+    {"id": "r08", "type": "fact", "question": "Почему не загружается выписка из банка?", "relevant_doc_ids": ["app_faq/import_statements.docx"]},
+    {"id": "r09", "type": "fact", "question": "Какие проценты по вкладу не облагаются налогом?", "relevant_doc_ids": ["taxes/deposit_interest_tax.md"]},
+    {"id": "r10", "type": "fact", "question": "Сколько можно вернуть на ИИС за взносы?", "relevant_doc_ids": ["taxes/iis3.pdf"]},
+    {"id": "r11", "type": "fact", "question": "Где посмотреть свою кредитную историю бесплатно?", "relevant_doc_ids": ["deposits_credits/credit_history.md"]},
+    {"id": "r12", "type": "fact", "question": "Через сколько выдадут деньги, если взять кредит на 300 тысяч?", "relevant_doc_ids": ["fraud_security/cooling_period.md"]},
+    {"id": "r13", "type": "fact", "question": "Приложение закрывается при запуске, что делать?", "relevant_doc_ids": ["app_faq/crash_troubleshooting.md"]},
+    {"id": "r14", "type": "fact", "question": "Сколько стоит годовая подписка на расширенный тариф?", "relevant_doc_ids": ["app_faq/tariffs_v2.pdf"]},
+    {"id": "r15", "type": "compare", "question": "Чем вклад отличается от накопительного счёта и что лучше для подушки?", "relevant_doc_ids": ["deposits_credits/deposit_vs_savings_account.md", "budgeting/emergency_fund.pdf"]},
+    {"id": "r16", "type": "compare", "question": "Аннуитетный или дифференцированный платёж — где меньше переплата?", "relevant_doc_ids": ["deposits_credits/annuity_vs_differentiated.md"]},
+    {"id": "r17", "type": "compare", "question": "Что выгоднее гасить первым — маленький долг или долг с большой ставкой?", "relevant_doc_ids": ["budgeting/debt_strategies.md"]},
+    {"id": "r18", "type": "compare", "question": "Микрозайм или банковский кредит — что дороже?", "relevant_doc_ids": ["deposits_credits/microloans_risk.md", "deposits_credits/credit_psk.pdf"]},
+    {"id": "r19", "type": "compare", "question": "Копить на крупную покупку или взять рассрочку?", "relevant_doc_ids": ["budgeting/big_purchase.md"]},
+    {"id": "r20", "type": "multi", "question": "Купил квартиру в ипотеку — какие налоговые вычеты я могу получить и как их оформить?", "relevant_doc_ids": ["taxes/property_deduction.pdf", "deposits_credits/mortgage_basics.md", "taxes/declaration_3ndfl.docx"]},
+    {"id": "r21", "type": "multi", "question": "Мне позвонил якобы банк и я продиктовал код — как теперь защитить себя и вернуть деньги?", "relevant_doc_ids": ["fraud_security/stolen_card_actions.pdf", "fraud_security/fake_bank_security_call.html", "fraud_security/sms_codes.md"]},
+    {"id": "r22", "type": "multi", "question": "Как распределить зарплату, чтобы и копить, и не забывать про обязательные платежи?", "relevant_doc_ids": ["budgeting/rule_50_30_20.html", "budgeting/envelope_method.md", "budgeting/emergency_fund.pdf"]},
+    {"id": "r23", "type": "multi", "question": "Оплатил ребёнку учёбу и секцию плавания — что из этого можно вернуть через налоговую?", "relevant_doc_ids": ["taxes/social_deduction_education.md", "taxes/sport_deduction.md"]},
+    {"id": "r24", "type": "multi", "question": "Когда придут деньги после подачи декларации на вычет?", "relevant_doc_ids": ["taxes/tax_refund_timeline.md", "taxes/declaration_3ndfl.docx"]}
+  ]
+}

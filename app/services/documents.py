@@ -65,7 +65,8 @@ def extract_text(path: Path) -> str:
     raise ValueError(f"неподдерживаемый формат: {path.name}")
 
 
-def load_corpus(data_dir: Path, skip: tuple[str, ...] = ("finance",)) -> list[Document]:
+def load_corpus(data_dir: Path, skip: tuple[str, ...] = ("finance", "rag-block-03")) -> list[Document]:
+    """skip: finance — транзакции, не документы; rag-block-03 — копии для Б5.3 (иначе в индексе были бы дубли)."""
     files = sorted(p for p in data_dir.rglob("*") if p.suffix.lower() in SUPPORTED and p.parts[len(data_dir.parts)] not in skip)
     versions: dict[str, int] = {}
     for p in files:  # максимальная версия у каждого документа — чтобы пометить старые как archived

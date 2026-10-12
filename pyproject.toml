@@ -38,6 +38,11 @@ dependencies = [
     "llama-index-embeddings-openai-like>=0.4.0",
 ]
 
+[project.optional-dependencies]
+rerank = [
+    "sentence-transformers>=6.1.0",
+]
+
 [dependency-groups]
 dev = [
     "pymupdf>=1.28.2",
