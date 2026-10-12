@@ -23,6 +23,9 @@ services:
       PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
       # Б4.1: внутри compose-сети Postgres — это хост postgres:5432
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      QDRANT_URL: http://qdrant:6333
+      # Эмбеддинги — Ollama на хосте
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL_DOCKER:-http://host.docker.internal:11434/v1}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -32,6 +35,8 @@ services:
         condition: service_started
       migrate:
         condition: service_completed_successfully
+      qdrant:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 15s
@@ -84,6 +89,24 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Б5.2: векторная БД. unprivileged-сборка — процесс не под root.
+  qdrant:
+    image: qdrant/qdrant:v1.19.2-unprivileged
+    ports:
+      - "127.0.0.1:6333:6333"   # REST + dashboard (только localhost)
+      - "127.0.0.1:6334:6334"   # gRPC
+    environment:
+      # Ключ обязателен даже на dev: конфиг уезжает в прод, а «забытый» открытый Qdrant — утечка данных
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
+    volumes:
+      - qdrant_storage:/qdrant/storage   # без тома после docker compose down -v всё пропадёт
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   redis:
     image: redis:7.4-alpine
     # Без ports: Redis доступен только app по внутренней сети, на хост не торчит
@@ -113,3 +136,4 @@ volumes:
   redis_data: {}
   phoenix-data: {}
   pg-data: {}
+  qdrant_storage: {}

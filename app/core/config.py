@@ -101,6 +101,12 @@ class Settings(BaseSettings):
     embedding_batch_size: int = 64
     embedding_cache_dir: Path = PROJECT_ROOT / "var" / "embeddings_cache"
 
+    # --- Векторная БД (Б5.2) ---
+    qdrant_url: str = "http://127.0.0.1:6333"
+    qdrant_api_key: SecretStr | None = None
+    qdrant_collection: str = "documents"
+    data_dir: Path = PROJECT_ROOT / "data"
+
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True

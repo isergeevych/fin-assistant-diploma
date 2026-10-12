@@ -29,10 +29,13 @@ dependencies = [
     "tenacity>=9.2.1",
     "diskcache>=5.6.3",
     "numpy>=2.5.4",
+    "qdrant-client>=1.19.1",
+    "tqdm>=4.70.1",
 ]
 
 [dependency-groups]
 dev = [
+    "pymupdf>=1.28.2",
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-mock>=3.16.0",
@@ -42,7 +45,7 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = ["llm: тесты, которые ходят в настоящий LLM API (нужен ключ)"]
+markers = ["llm: тесты, которые ходят в настоящий LLM API (нужен ключ)", "integration: нужны запущенные сервисы (Qdrant)"]
 
 [tool.uv]
 package = false
