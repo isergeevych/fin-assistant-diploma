@@ -153,6 +153,7 @@ class Settings(BaseSettings):
     agent_model: str | None = None
     agent_api_key: SecretStr | None = None
     agent_reasoning_effort: str | None = None  # qwen3: "none" — без «размышлений» на каждом шаге
+    agent_premium_model: str = "openai/gpt-5.4"  # Б6.2: генерация после REVISE критика
 
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.

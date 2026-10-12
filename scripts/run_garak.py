@@ -33,15 +33,20 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--garak", default=os.environ.get("GARAK_BIN", "garak"))
     parser.add_argument("--parallel", type=int, default=5)
+    # garak по умолчанию берёт до 256 промптов на пробу: 3 пробы × 2 прогона ≈ 1400 вызовов ≈ $3,5 на gpt-5.4-mini.
+    # Кап одинаков для baseline и after (seed тот же) → выборки сравнимы.
+    parser.add_argument("--cap", type=int, default=50, help="soft_probe_prompt_cap: промптов на пробу")
     args = parser.parse_args()
 
     config = json.loads((ROOT / "eval" / "security" / "rest_config.json").read_text(encoding="utf-8"))
     config["rest"]["RestGenerator"]["uri"] = f"http://localhost:{args.port}/chat"
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as tmp:
         json.dump(config, tmp, ensure_ascii=False)
+    with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as run_cfg:
+        run_cfg.write(f"---\nrun:\n  soft_probe_prompt_cap: {args.cap}\n")
 
     cmd = [
-        args.garak, "--target_type", "rest", "--generator_option_file", tmp.name,
+        args.garak, "--config", run_cfg.name, "--target_type", "rest", "--generator_option_file", tmp.name,
         "--probes", PROBES, "--generations", "1", "--seed", str(SEED),
         "--parallel_attempts", str(args.parallel), "--report_prefix", args.label,
     ]
