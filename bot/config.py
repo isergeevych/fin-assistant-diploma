@@ -1,10 +1,10 @@
 """Настройки бота (pydantic-settings). Токен — SecretStr, читается из .env (в git не попадает)."""
 
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from app.core.config import PROJECT_ROOT
 
@@ -14,7 +14,8 @@ class BotSettings(BaseSettings):
 
     bot_token: SecretStr
     backend_url: str = "http://127.0.0.1:8010"
-    bot_admin_ids: list[int] = []
+    # NoDecode: без него pydantic-settings сначала парсит JSON и падает на "123,456" до валидатора
+    bot_admin_ids: Annotated[list[int], NoDecode] = []
     backend_timeout_sec: float = 30.0
     # Не чаще одного edit_text на сообщение в секунду: иначе Telegram отвечает 429 Too Many Requests
     stream_edit_interval_sec: float = 1.0
