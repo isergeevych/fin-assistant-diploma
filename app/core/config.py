@@ -10,7 +10,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -153,6 +153,16 @@ class Settings(BaseSettings):
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True
+
+    @field_validator("openai_api_key", "internal_token", "admin_token", "qdrant_api_key", "rag_llm_base_url",
+                     "rag_llm_model", "rag_llm_api_key", "rag_llm_reasoning_effort", "eval_judge_base_url",
+                     "eval_judge_model", "eval_judge_api_key", "eval_judge_reasoning_effort", "agent_base_url",
+                     "agent_model", "agent_api_key", "agent_reasoning_effort", mode="before")
+    @classmethod
+    def empty_is_unset(cls, v):
+        # «OPENAI_API_KEY=» в .env — это «не задано», а не пустой ключ: иначе SecretStr("") проходит проверки
+        # «ключ есть?» и клиент OpenAI падает с Missing credentials (поймано тестами 4.3/4.4)
+        return None if isinstance(v, str) and not v.strip() else v
 
 
 @lru_cache
