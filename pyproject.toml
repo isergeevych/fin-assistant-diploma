@@ -31,6 +31,11 @@ dependencies = [
     "numpy>=2.5.4",
     "qdrant-client>=1.19.1",
     "tqdm>=4.70.1",
+    "llama-index>=0.14.25",
+    "llama-index-vector-stores-qdrant>=0.10.4",
+    "llama-index-readers-file>=0.7.0",
+    "llama-index-llms-openai-like>=0.8.0",
+    "llama-index-embeddings-openai-like>=0.4.0",
 ]
 
 [dependency-groups]

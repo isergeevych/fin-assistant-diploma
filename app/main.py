@@ -7,6 +7,7 @@ lifespan создаёт клиентов (AsyncLLMClient с AsyncOpenAI внут
 с телом {"error": {...}} — без traceback наружу.
 """
 
+import asyncio
 import re
 import secrets
 import time
@@ -28,7 +29,7 @@ from app.core.config import get_settings
 from app.core.exceptions import LLMError
 from app.observability.logging import setup_logging
 from app.observability.tracing import setup_tracing
-from app.routers import chat, health, models
+from app.routers import chat, health, models, rag
 from app.services.llm_client import AsyncLLMClient
 
 # request_id от клиента принимаем только «безопасной» формы — иначе через заголовок
@@ -45,6 +46,16 @@ async def lifespan(app: FastAPI):
     # Б3.8: canary генерируется заново при каждом старте и живёт только в памяти процесса
     app.state.canary = f"CANARY_{secrets.token_hex(4)}"
     app.state.llm = AsyncLLMClient(settings.llm)
+    # Б5.3: RAG-индекс — один раз на старте. Недоступность Qdrant/эмбеддингов не должна ронять весь
+    # сервис: /rag/query ответит 503, остальное работает (graceful degradation).
+    app.state.rag = None
+    if settings.rag_enabled:
+        try:
+            from app.services.rag import RAGService
+
+            app.state.rag = await asyncio.to_thread(lambda: RAGService(settings).build())
+        except Exception as e:  # noqa: BLE001
+            structlog.get_logger("rag").warning("rag.unavailable", error=f"{type(e).__name__}: {e}"[:300])
     # Redis создаётся лениво: соединение откроется на первом запросе, поэтому
     # приложение стартует и /health работает, даже если Redis сейчас недоступен.
     app.state.redis = Redis.from_url(
@@ -131,6 +142,7 @@ async def chat_not_found_handler(request: Request, exc: ChatNotFoundError) -> JS
 app.include_router(health.router)
 app.include_router(models.router)
 app.include_router(chat.router)
+app.include_router(rag.router)
 # admin — РАНЬШЕ чат-роутера: иначе /chats/admin/* совпало бы с /chats/{chat_id}
 app.include_router(admin_routes.router)
 app.include_router(admin_routes.internal)

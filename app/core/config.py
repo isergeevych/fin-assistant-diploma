@@ -107,6 +107,20 @@ class Settings(BaseSettings):
     qdrant_collection: str = "documents"
     data_dir: Path = PROJECT_ROOT / "data"
 
+    # --- RAG (Б5.3) ---
+    rag_enabled: bool = True
+    rag_data_dir: Path = PROJECT_ROOT / "data" / "rag-block-03"
+    rag_collection: str = "rag_block_03"            # LlamaIndex (формат нод _node_content)
+    rag_collection_bare: str = "rag_block_03_bare"  # bare-metal (плоский payload)
+    rag_chunk_size: int = 512
+    rag_chunk_overlap: int = 64
+    rag_top_k: int = 3
+    rag_score_threshold: float = 0.35  # ниже — честный отказ без вызова LLM (калибровка — docs/rag.md)
+    # LLM для генерации ответа. Пусто — берётся основной LLM (OpenRouter); для локальной работы — Ollama.
+    rag_llm_base_url: str | None = None
+    rag_llm_model: str | None = None
+    rag_llm_api_key: SecretStr | None = None
+
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True

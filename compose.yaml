@@ -26,6 +26,10 @@ services:
       QDRANT_URL: http://qdrant:6333
       # Эмбеддинги — Ollama на хосте
       EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL_DOCKER:-http://host.docker.internal:11434/v1}
+      # LLM для RAG: пусто → основной LLM (OpenRouter); для локальной модели на хосте задать в .env
+      RAG_LLM_BASE_URL: ${RAG_LLM_BASE_URL_DOCKER:-}
+    volumes:
+      - ./data:/app/data:ro   # корпус документов для RAG — только чтение
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
