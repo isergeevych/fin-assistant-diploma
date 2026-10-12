@@ -1,0 +1,233 @@
+$ curl -N -X POST http://127.0.0.1:8010/agent/stream -d {"thread_id":"demo-curl-1","message":"Найди в базе, до какой суммы АСВ страхует вклады, и отправь это коротким письмом на client@example.com"}
+data: {"type": "token", "delta": "С"}
+
+data: {"type": "token", "delta": "начала"}
+
+data: {"type": "token", "delta": " най"}
+
+data: {"type": "token", "delta": "ду"}
+
+data: {"type": "token", "delta": " в"}
+
+data: {"type": "token", "delta": " базе"}
+
+data: {"type": "token", "delta": " точ"}
+
+data: {"type": "token", "delta": "ную"}
+
+data: {"type": "token", "delta": " информацию"}
+
+data: {"type": "token", "delta": " про"}
+
+data: {"type": "token", "delta": " лим"}
+
+data: {"type": "token", "delta": "ит"}
+
+data: {"type": "token", "delta": " страх"}
+
+data: {"type": "token", "delta": "ования"}
+
+data: {"type": "token", "delta": " вклад"}
+
+data: {"type": "token", "delta": "ов"}
+
+data: {"type": "token", "delta": " А"}
+
+data: {"type": "token", "delta": "С"}
+
+data: {"type": "token", "delta": "В"}
+
+data: {"type": "token", "delta": ","}
+
+data: {"type": "token", "delta": " чтобы"}
+
+data: {"type": "token", "delta": " не"}
+
+data: {"type": "token", "delta": " ошиб"}
+
+data: {"type": "token", "delta": "иться"}
+
+data: {"type": "token", "delta": " в"}
+
+data: {"type": "token", "delta": " пись"}
+
+data: {"type": "token", "delta": "ме"}
+
+data: {"type": "token", "delta": "."}
+
+data: {"type": "update", "node": "call_model", "messages": [{"type": "ai", "content": "Сначала найду в базе точную информацию про лимит страхования вкладов АСВ, чтобы не ошибиться в письме.", "tool_calls": ["search_knowledge_base"]}], "iteration_count": 1}
+
+data: {"type": "update", "node": "execute_tool", "messages": [{"type": "tool", "content": "[deposit_insurance_asv.pdf] Страхование вкладов (АСВ)\nВклады и счета физических лиц в банках — участниках системы страхования\nзастрахованы государственным\nАгентством по страхованию вкладов (АСВ). Если у банка отзывают лицензию, АСВ\nвыплачивает возмещение\nв размере 100 % суммы, но не более 1,4 млн ₽ ", "tool_calls": []}]}
+
+data: {"type": "token", "delta": "Теперь"}
+
+data: {"type": "token", "delta": " подготов"}
+
+data: {"type": "token", "delta": "лю"}
+
+data: {"type": "token", "delta": " корот"}
+
+data: {"type": "token", "delta": "кий"}
+
+data: {"type": "token", "delta": " текст"}
+
+data: {"type": "token", "delta": " пись"}
+
+data: {"type": "token", "delta": "ма"}
+
+data: {"type": "token", "delta": " с"}
+
+data: {"type": "token", "delta": " найден"}
+
+data: {"type": "token", "delta": "ным"}
+
+data: {"type": "token", "delta": " лим"}
+
+data: {"type": "token", "delta": "итом"}
+
+data: {"type": "token", "delta": ","}
+
+data: {"type": "token", "delta": " а"}
+
+data: {"type": "token", "delta": " затем"}
+
+data: {"type": "token", "delta": " отправ"}
+
+data: {"type": "token", "delta": "лю"}
+
+data: {"type": "token", "delta": " его"}
+
+data: {"type": "token", "delta": " на"}
+
+data: {"type": "token", "delta": " указ"}
+
+data: {"type": "token", "delta": "анный"}
+
+data: {"type": "token", "delta": " адрес"}
+
+data: {"type": "token", "delta": "."}
+
+data: {"type": "update", "node": "call_model", "messages": [{"type": "ai", "content": "Теперь подготовлю короткий текст письма с найденным лимитом, а затем отправлю его на указанный адрес.", "tool_calls": ["send_report_email"]}], "iteration_count": 2}
+
+data: {"type": "update", "node": "prepare_email", "email_draft": {"to": "client@example.com", "subject": "Лимит страхования вкладов АСВ"}}
+
+data: {"type": "interrupt", "value": {"type": "approve_send_report_email", "preview": {"to": "client@example.com", "subject": "Лимит страхования вкладов АСВ", "body": "АСВ страхует вклады физических лиц в банках-участниках системы страхования на 100% суммы, но не более 1,4 млн ₽ на одного вкладчика в одном банке, включая проценты."}, "draft_id": "demo-curl-1:call_YTp4kd7AtBkF65HMuInMRtic"}}
+
+data: {"type": "done", "next": ["confirm_and_execute_email"], "sent": null}
+
+
+# --- docker compose restart app ---
+
+$ curl -N -X POST http://127.0.0.1:8010/agent/stream -d {"thread_id":"demo-curl-1","resume":true}
+data: {"type": "update", "node": "confirm_and_execute_email", "email_draft": null, "sent": true, "messages": [{"type": "tool", "content": "Отправлено после подтверждения. Кому: client@example.com, тема: «Лимит страхования вкладов АСВ».", "tool_calls": []}]}
+
+data: {"type": "token", "delta": "П"}
+
+data: {"type": "token", "delta": "ись"}
+
+data: {"type": "token", "delta": "мо"}
+
+data: {"type": "token", "delta": " отправ"}
+
+data: {"type": "token", "delta": "лено"}
+
+data: {"type": "token", "delta": " на"}
+
+data: {"type": "token", "delta": " client"}
+
+data: {"type": "token", "delta": "@example"}
+
+data: {"type": "token", "delta": ".com"}
+
+data: {"type": "token", "delta": ".\n\n"}
+
+data: {"type": "token", "delta": "К"}
+
+data: {"type": "token", "delta": "орот"}
+
+data: {"type": "token", "delta": "ко"}
+
+data: {"type": "token", "delta": " по"}
+
+data: {"type": "token", "delta": " сути"}
+
+data: {"type": "token", "delta": ":"}
+
+data: {"type": "token", "delta": " А"}
+
+data: {"type": "token", "delta": "С"}
+
+data: {"type": "token", "delta": "В"}
+
+data: {"type": "token", "delta": " страх"}
+
+data: {"type": "token", "delta": "ует"}
+
+data: {"type": "token", "delta": " вк"}
+
+data: {"type": "token", "delta": "лады"}
+
+data: {"type": "token", "delta": " на"}
+
+data: {"type": "token", "delta": " "}
+
+data: {"type": "token", "delta": "100"}
+
+data: {"type": "token", "delta": "%"}
+
+data: {"type": "token", "delta": " суммы"}
+
+data: {"type": "token", "delta": ","}
+
+data: {"type": "token", "delta": " но"}
+
+data: {"type": "token", "delta": " не"}
+
+data: {"type": "token", "delta": " более"}
+
+data: {"type": "token", "delta": " "}
+
+data: {"type": "token", "delta": "1"}
+
+data: {"type": "token", "delta": ","}
+
+data: {"type": "token", "delta": "4"}
+
+data: {"type": "token", "delta": " млн"}
+
+data: {"type": "token", "delta": " ₽"}
+
+data: {"type": "token", "delta": " на"}
+
+data: {"type": "token", "delta": " одного"}
+
+data: {"type": "token", "delta": " вклад"}
+
+data: {"type": "token", "delta": "чика"}
+
+data: {"type": "token", "delta": " в"}
+
+data: {"type": "token", "delta": " одном"}
+
+data: {"type": "token", "delta": " бан"}
+
+data: {"type": "token", "delta": "ке"}
+
+data: {"type": "token", "delta": ","}
+
+data: {"type": "token", "delta": " включая"}
+
+data: {"type": "token", "delta": " проц"}
+
+data: {"type": "token", "delta": "енты"}
+
+data: {"type": "token", "delta": "."}
+
+data: {"type": "update", "node": "call_model", "messages": [{"type": "ai", "content": "Письмо отправлено на client@example.com.\n\nКоротко по сути: АСВ страхует вклады на 100% суммы, но не более 1,4 млн ₽ на одного вкладчика в одном банке, включая проценты.", "tool_calls": []}], "iteration_count": 3}
+
+data: {"type": "update", "node": "force_finish"}
+
+data: {"type": "done", "next": [], "sent": true}
+
+
+$ (тот же resume ещё раз) → HTTP 409

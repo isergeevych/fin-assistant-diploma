@@ -155,6 +155,17 @@ class Settings(BaseSettings):
     agent_reasoning_effort: str | None = None  # qwen3: "none" — без «размышлений» на каждом шаге
     agent_premium_model: str = "openai/gpt-5.4"  # Б6.2: генерация после REVISE критика
 
+    # --- Персистентный агент с HIL (Б6.4) ---
+    # memory — тесты; sqlite — локальная разработка; postgres — docker-compose (та же БД, что у чата)
+    agent_checkpointer: Literal["memory", "sqlite", "postgres"] = "sqlite"
+    agent_sqlite_path: Path = PROJECT_ROOT / "var" / "agent_checkpoints.sqlite"
+    agent_email_ledger_path: Path = PROJECT_ROOT / "var" / "email_ledger.sqlite"  # идемпотентность отправки
+    # write-with-approve: опасный tool только после подтверждения; full — без; read-only — запрещён
+    agent_default_role: Literal["read-only", "write-with-approve", "full"] = "write-with-approve"
+    smtp_host: str = "127.0.0.1"  # Mailpit: SMTP-ловушка, письма видны в http://127.0.0.1:8025, наружу не уходят
+    smtp_port: int = 1025
+    smtp_from: str = "finpomoshnik@example.com"
+
     # --- Безопасность (Б3.8) ---
     # false — «голый» сервис для baseline-прогона garak; в проде всегда true.
     security_enabled: bool = True

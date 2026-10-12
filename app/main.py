@@ -12,7 +12,7 @@ import re
 import secrets
 import time
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
 import structlog
 from fastapi import FastAPI, Request
@@ -29,7 +29,7 @@ from app.core.config import get_settings
 from app.core.exceptions import LLMError
 from app.observability.logging import setup_logging
 from app.observability.tracing import setup_tracing
-from app.routers import chat, documents, health, models, rag
+from app.routers import agent, chat, documents, health, models, rag
 from app.services.llm_client import AsyncLLMClient
 
 # request_id от клиента принимаем только «безопасной» формы — иначе через заголовок
@@ -67,7 +67,18 @@ async def lifespan(app: FastAPI):
     if settings.chat_repository == "postgres":
         engine = create_async_engine(settings.database_url, pool_size=10, max_overflow=5, pool_pre_ping=True)
         app.state.db_sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+    # Б6.4: граф агента с checkpointer — setup() ровно один раз здесь, а не на каждый запрос.
+    # Без extra `agents` или при недоступной БД сервис работает, /agent/stream отвечает 503.
+    stack = AsyncExitStack()
+    app.state.agent_graph = None
+    try:
+        from app.services.agent_persistent import agent_lifespan
+
+        app.state.agent_graph = await stack.enter_async_context(agent_lifespan(settings))
+    except Exception as e:  # noqa: BLE001
+        structlog.get_logger("agent").warning("agent.unavailable", error=f"{type(e).__name__}: {e}"[:300])
     yield
+    await stack.aclose()
     await app.state.llm.aclose()
     await app.state.redis.aclose()
     if engine is not None:
@@ -145,6 +156,7 @@ app.include_router(models.router)
 app.include_router(chat.router)
 app.include_router(rag.router)
 app.include_router(documents.router)
+app.include_router(agent.router)
 # admin — РАНЬШЕ чат-роутера: иначе /chats/admin/* совпало бы с /chats/{chat_id}
 app.include_router(admin_routes.router)
 app.include_router(admin_routes.internal)

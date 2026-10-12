@@ -1,0 +1,30 @@
+1) Запуск до interrupt (thread demo-approve)
+   __interrupt__ payload: {
+     "type": "approve_send_report_email",
+     "preview": {
+       "to": "client@example.com",
+       "subject": "Траты за сентябрь 2026",
+       "body": "Расходы за сентябрь: 93 501,01 ₽. Крупнейшая категория — жильё."
+     },
+     "draft_id": "demo-approve:call_1"
+   }
+
+2) История чек-пойнтов (новые сверху)
+   checkpoint_id                          step  next
+   1f1c6971-63e7-6ed9-8002-a189f2707218      2  ('confirm_and_execute_email',)
+   1f1c6971-63e6-6ae1-8001-2f7877a4f9b3      1  ('prepare_email',)
+   1f1c6971-63e4-62ff-8000-30ff94bc765b      0  ('call_model',)
+   1f1c6971-63e2-6ee3-bfff-e41da9e9a257     -1  ('__start__',)
+
+3) Состояние на прошлом чек-пойнте (до отправки)
+   next=('confirm_and_execute_email',)  sent=False  draft.subject='Траты за сентябрь 2026'
+
+4) Две ветки из одинакового входа (разные thread_id)
+    [SMTP] письмо demo-approve:call_1 → client@example.com
+   demo-approve: resume=True  → sent=True   «Итог: Отправлено после подтверждения. Кому: client@example.com, тема: »
+   demo-reject:  resume=False → sent=False  «Итог: Пользователь отклонил отправку — письмо не ушло. Кому: client@ex»
+   отправлено писем: 1 (['demo-approve:call_1'])
+
+5) Нюанс: повторный resume ТОГО ЖЕ чек-пойнта паузы с другим решением
+   demo-approve @ 1f1c6971-63e7…: resume=False → sent=True
+   отправлено писем всего: 1 (['demo-approve:call_1'])
