@@ -97,7 +97,11 @@ def _to_domain(exc: BaseException) -> LLMError:
     if isinstance(exc, (openai.AuthenticationError, openai.PermissionDeniedError)):
         return LLMAuthError("Ошибка авторизации у провайдера LLM")
     if isinstance(exc, (openai.BadRequestError, openai.NotFoundError, openai.UnprocessableEntityError)):
-        return LLMBadRequestError(f"Некорректный запрос к LLM: {getattr(exc, 'message', exc)}")
+        # Только поле message из ошибки провайдера: полный текст исключения содержит сырой ответ
+        # OpenRouter с user_id аккаунта — он уходил бы клиенту API в 400 (поймано на бенчмарке 3.3).
+        body = getattr(exc, "body", None)
+        detail = body.get("message") if isinstance(body, dict) else None
+        return LLMBadRequestError(f"Некорректный запрос к LLM: {detail or type(exc).__name__}")
     return LLMUnavailableError(f"Провайдер LLM недоступен: {type(exc).__name__}")
 
 

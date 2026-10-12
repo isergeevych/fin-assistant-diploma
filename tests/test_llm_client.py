@@ -12,7 +12,7 @@ from openai.types.chat import ChatCompletion
 
 from app.core.config import LLMSettings
 from app.core.exceptions import LLMAuthError, LLMUnavailableError
-from app.services.llm_client import AsyncLLMClient, CircuitBreaker, ProviderSlot
+from app.services.llm_client import AsyncLLMClient, CircuitBreaker, ProviderSlot, _to_domain
 
 
 def completion(text: str) -> ChatCompletion:
@@ -136,3 +136,14 @@ async def test_batch_strict_raises_exception_group():
     client = make_client(Flaky(reply="ok"))
     with pytest.raises(ExceptionGroup):
         await client.batch_chat_strict(["a", "bad", "c"])
+
+
+def test_bad_request_message_hides_provider_account_data():
+    # Так OpenRouter отвечает на неизвестную модель: user_id аккаунта — рядом с текстом ошибки
+    request = httpx2.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
+    response = httpx2.Response(400, request=request)
+    exc = openai.BadRequestError(
+        "Error code: 400 - {'error': {'message': 'x is not a valid model ID', 'code': 400}, 'user_id': 'user_SECRET'}",
+        response=response, body={"message": "x is not a valid model ID", "code": 400})
+    err = _to_domain(exc)
+    assert "x is not a valid model ID" in err.message and "user_SECRET" not in err.message
