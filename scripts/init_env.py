@@ -35,6 +35,9 @@ def set_var(text: str, key: str, value: str) -> str:
 
 
 def main() -> None:
+    # консоль Windows по умолчанию cp1252 — русский вывод падал бы с UnicodeEncodeError (поймано на чистой машине)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--openrouter-key", default="", help="ключ OpenRouter (https://openrouter.ai/keys)")
     p.add_argument("--no-ollama", action="store_true", help="эмбеддинги через OpenRouter вместо локальной Ollama")
