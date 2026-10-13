@@ -18,11 +18,12 @@
 copy .env.example .env      # вписать LLM__API_KEY (OpenRouter); остальное — по комментариям
 uv sync --extra eval --extra tracing --extra rerank --group dev
 .venv\Scripts\python -m pytest -q                 # тесты без сети и ключей
-docker compose up -d --build                      # migrate → ingest → app + bot + postgres + qdrant + redis + phoenix
+docker compose up -d --build                      # migrate → ingest → app + bot + postgres + qdrant + redis + phoenix + mailpit
 ```
 
 - API и Swagger: http://localhost:8010/docs (порт задаётся `APP_PORT`)
 - Phoenix (трейсы): http://localhost:6006
+- Mailpit (письма агента, ДЗ 6.4): http://localhost:8025
 - Эмбеддинги — локальная `qwen3-embedding:0.6b` в Ollama (`ollama pull qwen3-embedding:0.6b`).
 
 ## Где какое ДЗ
@@ -43,7 +44,11 @@ docker compose up -d --build                      # migrate → ingest → app +
 | 5.2 | Qdrant | `app/services/vector_store.py`, `docs/vector_store.md` |
 | 5.3–5.5 | RAG: LlamaIndex, чанкинг, re-ranker, ассистент | `app/services/rag.py`, `docs/rag.md`, `docs/chunking_experiment.md` |
 | 5.6 | Оценка RAG (RAGAS) | `app/eval/`, `scripts/run_eval.py`, `tests/eval/`, `docs/rag_evaluation.md` |
-| 6.x | Агенты | `app/services/agent_*.py`, `docs/agent-*` |
+| 6.1 | Наивный агент | `app/services/agent_naive.py`, `docs/agent-naive-traces/` |
+| 6.2 | ReAct + критик | `app/services/agent_react.py`, `docs/agent-react-report.md` |
+| 6.3 | LangGraph: custom и prebuilt | `app/services/agent_graph.py`, `docs/agent-graph-report.md` |
+| 6.4 | Персистентность и подтверждение человеком | `app/services/agent_persistent.py`, `app/routers/agent.py`, `docs/agent-persistent-report.md` |
+| 6.5 | Мультиагент против одного агента | `experiments/`, `docs/multi-agent-report.md` |
 
 ## ДЗ 3.1 — прогоны function calling
 
