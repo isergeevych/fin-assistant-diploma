@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+pytest.importorskip("langgraph", reason="нужна группа agents: uv sync --extra agents")
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Command

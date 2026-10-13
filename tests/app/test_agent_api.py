@@ -3,7 +3,10 @@
 import json
 from unittest.mock import AsyncMock
 
+import pytest
 from fastapi.testclient import TestClient
+
+pytest.importorskip("langgraph", reason="нужна группа agents: uv sync --extra agents")
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.main import app

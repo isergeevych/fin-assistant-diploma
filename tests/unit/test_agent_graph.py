@@ -1,5 +1,7 @@
 """Б6.3 — custom StateGraph без сети: router как чистая функция, стоп-кран на «бесполезном» tool."""
 
+import pytest
+pytest.importorskip("langgraph", reason="нужна группа agents: uv sync --extra agents")
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from app.services import agent_graph

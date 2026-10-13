@@ -19,9 +19,10 @@ from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from langchain_core.messages import AIMessageChunk, BaseMessage
-from langgraph.types import Command
 from pydantic import BaseModel, Field, model_validator
+
+# langchain/langgraph — необязательная группа `agents`: импорт внутри функций, иначе без неё не стартовал бы
+# весь сервис (роутер подключается в main.py всегда). Без группы граф не поднимется и /agent/stream ответит 503.
 
 from app.core.config import get_settings
 from app.core.sse import sse_event
@@ -52,6 +53,8 @@ def _role(x_admin_token: str) -> str:
 
 def _summarize(update: dict | None) -> dict:
     """Сообщения LangChain не сериализуются в JSON как есть — отдаём суть."""
+    from langchain_core.messages import BaseMessage
+
     out = {}
     for key, value in (update or {}).items():
         if key == "messages":
@@ -66,6 +69,8 @@ def _summarize(update: dict | None) -> dict:
 
 
 async def _events(graph, payload, config) -> AsyncIterator[str]:
+    from langchain_core.messages import AIMessageChunk
+
     async for mode, data in graph.astream(payload, config, stream_mode=["updates", "messages"]):
         if mode == "messages":
             chunk, meta = data
@@ -92,6 +97,8 @@ async def agent_stream(body: AgentStreamRequest, request: Request, x_admin_token
         snapshot = await graph.aget_state(config)
         if not snapshot.next:
             raise HTTPException(status_code=409, detail="нет паузы, ожидающей решения, в этом треде")
+        from langgraph.types import Command
+
         payload = Command(resume=body.resume)
     else:
         verdict = validate_input(body.message)

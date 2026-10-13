@@ -16,17 +16,49 @@
 
 ## Запуск
 
-```powershell
-copy .env.example .env      # вписать LLM__API_KEY (OpenRouter); остальное — по комментариям
-uv sync --extra eval --extra tracing --extra rerank --group dev
-.venv\Scripts\python -m pytest -q                 # тесты без сети и ключей
-docker compose up -d --build                      # migrate → ingest → app + bot + postgres + qdrant + redis + phoenix + mailpit
+**Нужно:** Docker Desktop (или Docker Engine + compose v2), Python 3.12, [uv](https://docs.astral.sh/uv/), ключ
+[OpenRouter](https://openrouter.ai/keys) (ответы модели — центы за десятки вопросов). Ollama — по желанию (см. ниже).
+
+### 1. Настройка (один раз)
+
+```bash
+git clone https://github.com/isergeevych/fin-assistant-diploma.git && cd fin-assistant-diploma
+python scripts/init_env.py --openrouter-key sk-or-v1-... --no-ollama
 ```
 
-- API и Swagger: http://localhost:8010/docs (порт задаётся `APP_PORT`)
-- Phoenix (трейсы): http://localhost:6006
-- Mailpit (письма агента, ДЗ 6.4): http://localhost:8025
-- Эмбеддинги — локальная `qwen3-embedding:0.6b` в Ollama (`ollama pull qwen3-embedding:0.6b`).
+`init_env.py` создаёт `.env` из `.env.example` и сам генерирует пароли Postgres, Qdrant и служебные токены.
+Эмбеддинги базы знаний — два варианта:
+
+- `--no-ollama` — через OpenRouter (`baai/bge-m3`), ничего ставить не нужно;
+- без флага — локально в [Ollama](https://ollama.com): `ollama pull qwen3-embedding:0.6b` (так проект и разрабатывался;
+  пороги RAG откалиброваны под эту модель).
+
+### 2. Весь сервис в Docker
+
+```bash
+docker compose up -d --build     # migrate → ingest (индексация 56 документов) → app, + postgres, qdrant, redis, phoenix, mailpit
+docker compose ps                # app: healthy; migrate и ingest: exited (0) — они одноразовые
+```
+
+- API и Swagger: http://localhost:8000/docs (порт — `APP_PORT` в `.env`)
+- Phoenix (трейсы): http://localhost:6006 · Mailpit (письма агента, ДЗ 6.4): http://localhost:8025
+- Проверка: `curl -X POST localhost:8000/rag/query -H "Content-Type: application/json" -d '{"question":"Сколько вернут за лечение зубов?"}'`
+- Telegram-бот поднимается, только если в `.env` есть `BOT_TOKEN` (от @BotFather) и `BOT_ADMIN_IDS`; без токена контейнер
+  `bot` просто завершается.
+
+### 3. Тесты (без сети и ключей)
+
+```bash
+uv sync --extra agents --group dev          # минимум; полный набор: + --extra eval --extra tracing --extra rerank
+uv run pytest -q                            # ~190 тестов; с Postgres — если запущен Docker, иначе они пропускаются
+```
+
+Без `--extra agents` тесты агентов (6.3–6.4) пропускаются, сервис работает, `/agent/stream` отвечает 503.
+Скрипты ДЗ (`scripts/`, `eval/`, `experiments/`) запускаются через `uv run python -m scripts.<имя>`; какой extra
+нужен — в шапке каждого скрипта. На Windows в PowerShell: `.venv\Scripts\python` вместо `uv run python`.
+
+**Если что-то не так:** порт 8000 занят — поменяйте `APP_PORT`; `ingest` завершился с ошибкой — `docker compose logs
+ingest` (чаще всего недоступна Ollama: используйте `--no-ollama`); кириллица в консоли Windows — `set PYTHONIOENCODING=utf-8`.
 
 ## Где какое ДЗ
 
