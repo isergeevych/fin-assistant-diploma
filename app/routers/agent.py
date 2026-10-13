@@ -1,8 +1,8 @@
 """
 Б6.4 — POST /agent/stream: SSE-стрим персистентного графа с human-in-the-loop.
 
-    {"thread_id": "tg-1845608632", "message": "Отправь отчёт за сентябрь на me@example.com"}  # новый ход
-    {"thread_id": "tg-1845608632", "resume": true}                                            # решение по паузе
+    {"thread_id": "tg-100001", "message": "Отправь отчёт за сентябрь на me@example.com"}  # новый ход
+    {"thread_id": "tg-100001", "resume": true}                                            # решение по паузе
 
 graph.astream(stream_mode=["updates", "messages"]):
   updates  → {"type": "update", "node": …}  — прогресс по узлам (что сделал агент);
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 
 
 class AgentStreamRequest(BaseModel):
-    thread_id: str = Field(pattern=r"^[A-Za-z0-9_.:-]{3,64}$", examples=["tg-1845608632"])
+    thread_id: str = Field(pattern=r"^[A-Za-z0-9_.:-]{3,64}$", examples=["tg-100001"])
     message: str | None = Field(default=None, max_length=4000)
     resume: bool | None = Field(default=None, description="Решение по паузе: true — отправить, false — отменить")
 

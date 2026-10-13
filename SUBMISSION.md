@@ -11,8 +11,8 @@
 |---|---|---|---|
 | 1.3 | Ollama: локальные модели | [1-block-03-ollama-local-models-homework](https://github.com/isergeevych/1-block-03-ollama-local-models-homework) | сдано ранее |
 | 1.4 | Выбор модели: eval, бенчмарк, стоимость | [1-block-04-comparison-cost-homework](https://github.com/isergeevych/1-block-04-comparison-cost-homework) | сдано ранее |
-| 1.5 | HuggingFace + Gradio | [ai-course-hf-sentiment](https://github.com/georgehusher41-sketch/ai-course-hf-sentiment) (метка `hw-1.5`) | 3 модели HF: лучшая 83,3 % / 1,4 мс; облако 91,7 % / 0,7 с |
-| 2.1–2.5 | LLM API, промпты, надёжность, кеш, CLI | [ai-course-module-2](https://github.com/georgehusher41-sketch/ai-course-module-2) (метка `hw-2.1-2.5`) | см. README репозитория |
+| 1.5 | HuggingFace + Gradio | [ai-course-hf-sentiment](https://github.com/isergeevych/ai-course-hf-sentiment) (метка `hw-1.5`) | 3 модели HF: лучшая 83,3 % / 1,4 мс; облако 91,7 % / 0,7 с |
+| 2.1–2.5 | LLM API, промпты, надёжность, кеш, CLI | [ai-course-module-2](https://github.com/isergeevych/ai-course-module-2) (метка `hw-2.1-2.5`) | см. README репозитория |
 
 ## Модуль 3 — каркас сервиса
 
