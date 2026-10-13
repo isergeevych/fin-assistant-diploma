@@ -1,32 +1,40 @@
 """
-Б4.4 — admin-команды: /stats, /users, /broadcast <текст>.
+Админ-функции: кнопки 📊 Статистика, 👥 Пользователи, 📣 Рассылка (и старые /stats, /users, /broadcast).
 
-Доступ — фильтр IsAdmin на уровне РОУТЕРА (admin_router.message.filter(IsAdmin())), а не if
-внутри каждого хендлера: новый хендлер в этом роутере не сможет «забыть» проверку.
-Для не-админа команды молча не срабатывают (не раскрываем, что они существуют).
+Доступ — фильтр IsAdmin на уровне РОУТЕРА и для сообщений, и для нажатий inline-кнопок, а не if внутри
+каждого хендлера: новый хендлер в этом роутере не сможет «забыть» проверку. Кнопки меню видят только админы,
+но текст кнопки можно отправить и вручную — поэтому проверка здесь обязательна.
+Для не-админа всё молча не срабатывает (не раскрываем, что функции существуют).
+Рассылка необратима: текст → предпросмотр → «✅ Отправить всем» / «✖️ Отмена».
 Данные backend форматируются в HTML, все значения экранируются (html.escape).
 """
 
 import html
 
 import httpx
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import BaseFilter, Command, CommandObject
-from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
 
 from bot.config import BotSettings
 from bot.handlers.errors import user_message_for
+from bot.keyboards.inline import broadcast_confirm_kb, cancel_kb
+from bot.keyboards.reply import BTN_BROADCAST, BTN_STATS, BTN_USERS, MENU_BUTTONS
 from bot.services.backend_client import BackendClient
+from bot.states import BroadcastFlow
 
 router = Router(name="admin")
+MAX_BROADCAST = 1000
 
 
 class IsAdmin(BaseFilter):
-    async def __call__(self, message: Message, settings: BotSettings) -> bool:
-        return message.from_user is not None and message.from_user.id in settings.bot_admin_ids
+    async def __call__(self, event: Message | CallbackQuery, settings: BotSettings) -> bool:
+        return event.from_user is not None and event.from_user.id in settings.bot_admin_ids
 
 
 router.message.filter(IsAdmin())
+router.callback_query.filter(IsAdmin())
 
 
 def _token(settings: BotSettings) -> str:
@@ -60,6 +68,7 @@ def format_users(users: list[dict]) -> str:
 
 
 @router.message(Command("stats"))
+@router.message(F.text == BTN_STATS)
 async def cmd_stats(message: Message, backend: BackendClient, settings: BotSettings) -> None:
     try:
         stats = await backend.admin_get("stats", _token(settings))
@@ -70,6 +79,7 @@ async def cmd_stats(message: Message, backend: BackendClient, settings: BotSetti
 
 
 @router.message(Command("users"))
+@router.message(F.text == BTN_USERS)
 async def cmd_users(message: Message, backend: BackendClient, settings: BotSettings) -> None:
     try:
         users = await backend.admin_get("users", _token(settings), limit=10)
@@ -80,15 +90,55 @@ async def cmd_users(message: Message, backend: BackendClient, settings: BotSetti
                          parse_mode="HTML" if users else None)
 
 
+async def _preview(message: Message, state: FSMContext, text: str) -> None:
+    if len(text) > MAX_BROADCAST:
+        await message.answer(f"Слишком длинно: {len(text)} символов, максимум {MAX_BROADCAST}. Пришлите текст короче.",
+                             parse_mode=None, reply_markup=cancel_kb("bc:cancel"))
+        return
+    await state.update_data(broadcast_text=text)
+    await state.set_state(BroadcastFlow.confirming)
+    await message.answer(f"Так увидят все пользователи:\n\n{text}", parse_mode=None, reply_markup=broadcast_confirm_kb())
+
+
 @router.message(Command("broadcast"))
-async def cmd_broadcast(message: Message, command: CommandObject, backend: BackendClient,
-                        settings: BotSettings) -> None:
-    if not command.args:
-        await message.answer("Использование: /broadcast <текст рассылки>", parse_mode=None)
+async def cmd_broadcast(message: Message, command: CommandObject, state: FSMContext) -> None:
+    if command.args:
+        await _preview(message, state, command.args)
+    else:
+        await btn_broadcast(message, state)
+
+
+@router.message(F.text == BTN_BROADCAST)
+async def btn_broadcast(message: Message, state: FSMContext) -> None:
+    await state.set_state(BroadcastFlow.waiting_for_text)
+    await message.answer("Напишите текст рассылки одним сообщением — перед отправкой покажу, как он выглядит.",
+                         parse_mode=None, reply_markup=cancel_kb("bc:cancel"))
+
+
+@router.message(BroadcastFlow.waiting_for_text, F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTONS))
+async def on_broadcast_text(message: Message, state: FSMContext) -> None:
+    await _preview(message, state, message.text)
+
+
+@router.callback_query(BroadcastFlow.confirming, F.data == "bc:send")
+async def on_broadcast_send(callback: CallbackQuery, state: FSMContext, backend: BackendClient,
+                            settings: BotSettings) -> None:
+    text = (await state.get_data()).get("broadcast_text")
+    await state.clear()
+    await callback.answer()
+    if not text:
+        await callback.message.edit_text("Текст рассылки потерян — начните заново кнопкой 📣 Рассылка.")
         return
     try:
-        result = await backend.admin_broadcast(command.args, _token(settings))
+        result = await backend.admin_broadcast(text, _token(settings))
     except httpx.HTTPError as e:
-        await message.answer(user_message_for(e), parse_mode=None)
+        await callback.message.edit_text(user_message_for(e))
         return
-    await message.answer(f"Рассылка #{result.get('id')} поставлена в очередь.", parse_mode=None)
+    await callback.message.edit_text(f"Рассылка #{result.get('id')} поставлена в очередь:\n\n{text}")
+
+
+@router.callback_query(F.data == "bc:cancel")
+async def on_broadcast_cancel(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await callback.answer()
+    await callback.message.edit_text("Рассылка отменена — никто ничего не получил.")

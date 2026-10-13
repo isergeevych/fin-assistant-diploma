@@ -16,8 +16,22 @@ def topics_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for slug, title in TOPICS.items():
         kb.button(text=title, callback_data=f"topic:{slug}")
-    kb.button(text="Отмена", callback_data=f"topic:{CANCEL}")
+    kb.button(text="✖️ Отмена", callback_data=f"topic:{CANCEL}")
     kb.adjust(2, 2, 1)
+    return kb.as_markup()
+
+
+def cancel_kb(callback_data: str = "ask:cancel") -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✖️ Отмена", callback_data=callback_data)
+    return kb.as_markup()
+
+
+def broadcast_confirm_kb() -> InlineKeyboardMarkup:
+    """Рассылка необратима — отправка только после явного подтверждения (как HIL у агента в 6.4)."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Отправить всем", callback_data="bc:send")
+    kb.button(text="✖️ Отмена", callback_data="bc:cancel")
     return kb.as_markup()
 
 
