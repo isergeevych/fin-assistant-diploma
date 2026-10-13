@@ -18,7 +18,7 @@ from collections import Counter
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, case, distinct, func, select, update
 
@@ -49,6 +49,14 @@ class TopQuestion(BaseModel):
     count: int
 
 
+class SpendRow(BaseModel):
+    owner: str
+    usd: float
+    tokens: int
+    messages: int
+    exempt: bool  # админ — без лимитов
+
+
 class StatsOut(BaseModel):
     period_hours: int = 24
     total_messages: int
@@ -58,6 +66,10 @@ class StatsOut(BaseModel):
     feedback_up_ratio: float | None
     feedback_total: int
     top_questions: list[TopQuestion]
+    # расходы с 00:00 МСК по пользователям (лимиты: USAGE_DAILY_USD / USAGE_DAILY_TOKENS)
+    spend_today: list[SpendRow] = []
+    daily_limit_usd: float = 0.0
+    daily_limit_tokens: int = 0
 
 
 class UserOut(BaseModel):
@@ -83,7 +95,7 @@ class BroadcastDone(BaseModel):
 
 
 @router.get("/stats", response_model=StatsOut, summary="Метрики за 24 часа")
-async def stats(session: DbSessionDep) -> StatsOut:
+async def stats(session: DbSessionDep, request: Request) -> StatsOut:
     since = datetime.now(UTC) - timedelta(hours=24)
     m = ChatMessageRow
     recent = m.created_at >= since
@@ -109,7 +121,12 @@ async def stats(session: DbSessionDep) -> StatsOut:
     top = Counter(_normalize(redact_pii(c)) for c in contents).most_common(5)
 
     attempts = (user_msgs or 0) + (blocked or 0)
+    limiter = getattr(request.app.state, "usage_limiter", None)
+    spend = [SpendRow(**r) for r in await limiter.today()] if limiter is not None else []
     return StatsOut(
+        spend_today=spend,
+        daily_limit_usd=limiter.daily_usd if limiter is not None else 0.0,
+        daily_limit_tokens=limiter.daily_tokens if limiter is not None else 0,
         total_messages=total or 0,
         active_users=active or 0,
         avg_latency_ms=round(float(avg_latency), 1) if avg_latency is not None else None,

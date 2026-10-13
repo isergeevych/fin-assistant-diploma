@@ -8,10 +8,10 @@
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -88,6 +88,13 @@ class Settings(BaseSettings):
 
     # --- Production-обвязка (Б4.4) ---
     moderation_enabled: bool = True
+
+    # --- Лимиты на пользователя (время тестов): 0 — лимит выключен ---
+    usage_daily_usd: float = 1.0        # реальная стоимость из ответа OpenRouter, сутки по Москве
+    usage_daily_tokens: int = 50_000    # input + output по всем вызовам модели ради сообщений пользователя
+    usage_rate_per_minute: int = 10
+    # Админы без лимитов — тот же BOT_ADMIN_IDS, что у бота (owner_external_id в чате = Telegram chat.id)
+    bot_admin_ids: Annotated[list[str], NoDecode] = []
     admin_token: SecretStr | None = None  # X-Admin-Token для /chats/admin/*; без него admin-API выключен
 
     # --- Эмбеддинги (Б5.1) ---
@@ -179,6 +186,14 @@ class Settings(BaseSettings):
         # «OPENAI_API_KEY=» в .env — это «не задано», а не пустой ключ: иначе SecretStr("") проходит проверки
         # «ключ есть?» и клиент OpenAI падает с Missing credentials (поймано тестами 4.3/4.4)
         return None if isinstance(v, str) and not v.strip() else v
+
+    @field_validator("bot_admin_ids", mode="before")
+    @classmethod
+    def split_ids(cls, v):
+        # «123,456» в .env (как у бота); NoDecode — иначе pydantic-settings сначала парсит JSON
+        if isinstance(v, (int, str)):
+            return [x for x in str(v).replace(" ", "").split(",") if x]
+        return [str(x) for x in v]
 
 
 @lru_cache

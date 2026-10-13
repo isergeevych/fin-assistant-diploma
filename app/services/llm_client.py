@@ -42,6 +42,7 @@ from app.core.exceptions import (
     LLMTimeoutError,
     LLMUnavailableError,
 )
+from app.services.usage_limits import record_usage
 
 log = structlog.get_logger("llm")
 
@@ -164,6 +165,7 @@ class AsyncLLMClient:
                     continue
                 p.breaker.success()
                 usage = response.usage
+                record_usage(usage, target)  # лимиты на пользователя: реальная стоимость вызова
                 log.info("llm.call", provider=p.name, model=target, prompt_chars=prompt_chars,
                          duration_ms=_ms(started), status="ok",
                          finish_reason=response.choices[0].finish_reason,
@@ -265,6 +267,7 @@ class AsyncLLMClient:
                         chunk = await anext(iterator)
                     except StopAsyncIteration:
                         break
+                record_usage(usage, target)  # usage.cost приходит в последнем чанке (include_usage)
                 log.info("llm.stream", provider=p.name, model=target, status="ok", ttft_ms=ttft_ms,
                          duration_ms=_ms(started), finish_reason=finish_reason,
                          total_tokens=usage.total_tokens if usage else None,

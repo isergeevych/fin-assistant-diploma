@@ -21,6 +21,14 @@ def user_message_for(exc: Exception) -> str:
         if status == 404:
             return "Диалог не найден — нажмите /start."
         if status == 429:
+            # лимиты на пользователя: сервер сам формулирует, что случилось и когда снова можно
+            # («Лимит на сегодня исчерпан, обновится в 00:00 МСК.» / «не больше 10 сообщений в минуту…»)
+            try:
+                detail = exc.response.json().get("detail")
+            except ValueError:
+                detail = None
+            if isinstance(detail, dict) and detail.get("message"):
+                return str(detail["message"])
             return "Слишком много запросов, подождите минуту."
         if status >= 500:
             return "Внутренняя ошибка сервиса, попробуйте позже."

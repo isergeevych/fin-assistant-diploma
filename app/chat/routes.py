@@ -18,9 +18,10 @@ from collections.abc import AsyncIterator
 from typing import Annotated, Literal
 from uuid import UUID
 
+import anyio
 import httpx
 import structlog
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
@@ -36,6 +37,7 @@ from app.deps.auth import require_internal
 from app.deps.providers import SettingsDep
 from app.schemas.chat import ErrorResponse
 from app.services.notifier import notify_user
+from app.services.usage_limits import SpendMeter, UsageLimiter, UsageLimitError, current_meter
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 log = structlog.get_logger("chat.routes")
@@ -91,6 +93,7 @@ async def get_chat(chat_id: UUID, service: ChatServiceDep) -> Chat:
 )
 async def send_message(
     chat_id: UUID,
+    request: Request,
     service: ChatServiceDep,
     stt: Annotated[AsyncOpenAI | None, Depends(get_stt_client)],
     content: str = Form(..., min_length=1, max_length=4000),
@@ -98,6 +101,13 @@ async def send_message(
 ) -> StreamingResponse:
     # Всё, что может отказать, — ДО начала стрима: так клиент получит честный HTTP-код.
     chat = await service.get_chat(chat_id)
+    limiter: UsageLimiter | None = getattr(request.app.state, "usage_limiter", None)
+    if limiter is not None:  # лимиты на пользователя — до любых платных вызовов (распознавание, модель)
+        try:
+            await limiter.check(chat.owner_external_id)
+        except UsageLimitError as e:
+            raise HTTPException(status_code=429, detail={"code": e.code, "message": e.message},
+                                headers={"Retry-After": str(e.retry_after)}) from e
     service.check_input(content)
     media_part = media_meta = None
     if media is not None:
@@ -116,6 +126,8 @@ async def send_message(
         raise HTTPException(status_code=403, detail={"code": e.code, "categories": e.categories}) from e
 
     async def events() -> AsyncIterator[str]:
+        meter = SpendMeter()
+        token = current_meter.set(meter)  # все LLM-вызовы ради этого сообщения (condense + ответ) пишут сюда
         try:
             async for delta in service.send_message(chat_id, content, media_part, media_meta):
                 yield sse_event("token", delta=delta)
@@ -124,6 +136,15 @@ async def send_message(
         except LLMError as e:
             log.warning("chat.stream_error", code=e.code)
             yield sse_event("error", code=e.code, message=e.message)
+        finally:
+            try:
+                current_meter.reset(token)
+            except ValueError:  # генератор закрыт из другого контекста (обрыв соединения) — сбрасывать нечего
+                pass
+            if limiter is not None:
+                with anyio.CancelScope(shield=True):  # клиент отключился — траты всё равно записать
+                    await limiter.add(chat.owner_external_id, meter)
+            log.info("chat.spend", usd=round(meter.usd, 6), tokens=meter.tokens, llm_calls=meter.calls)
         if service.last_sources:  # Б5.5: источники — финальным событием, после текста
             yield sse_json({"type": "sources", "sources": service.last_sources}, event="sources")
         message_id = getattr(service, "last_assistant_message_id", None)  # для кнопок 👍/👎 в боте

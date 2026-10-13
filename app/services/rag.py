@@ -38,6 +38,7 @@ from app.core.config import Settings, get_settings
 from app.prompts.loader import render_template
 from app.services.documents import extract_text
 from app.services.embeddings import EmbeddingService, get_embedding_service
+from app.services.usage_limits import record_usage
 
 log = structlog.get_logger("rag")
 REFUSAL = "По базе не нашёл ответа, могу передать вопрос специалисту."
@@ -164,6 +165,7 @@ class RAGService:
         response = self.client.chat.completions.create(
             model=self.model, max_tokens=120, **self.llm_extra,
             messages=[{"role": "user", "content": CONDENSE_PROMPT.format(history=lines, question=question)}])
+        record_usage(response.usage, self.model)  # переписывание вопроса тоже тратит бюджет пользователя
         rewritten = (response.choices[0].message.content or "").strip().splitlines()
         result = rewritten[-1].strip() if rewritten else question
         log.info("rag.condense", original_len=len(question), rewritten_len=len(result))
@@ -229,6 +231,7 @@ class RAGService:
         messages = [*(history or [])[-6:], {"role": "user", "content": prompt}]
         response = self.client.chat.completions.create(model=self.model, messages=messages, max_tokens=700,
                                                        **self.llm_extra)
+        record_usage(response.usage, self.model)
         return {"answer": (response.choices[0].message.content or "").strip(), "top_score": round(top_score, 3),
                 "confident": self.confident(chunks, top_score), "sources": sources, "llm_called": True,
                 "search_query": search_query}

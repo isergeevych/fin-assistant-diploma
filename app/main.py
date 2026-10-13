@@ -31,6 +31,7 @@ from app.observability.logging import setup_logging
 from app.observability.tracing import setup_tracing
 from app.routers import agent, chat, documents, health, models, rag
 from app.services.llm_client import AsyncLLMClient
+from app.services.usage_limits import UsageLimiter
 
 # request_id от клиента принимаем только «безопасной» формы — иначе через заголовок
 # можно было бы внедрить переводы строк и мусор в логи.
@@ -62,6 +63,9 @@ async def lifespan(app: FastAPI):
     app.state.redis = Redis.from_url(
         settings.redis_url, decode_responses=True, socket_connect_timeout=1, socket_timeout=1
     )
+    # лимиты на пользователя (частота, $ и токены в сутки) — счётчики в том же Redis
+    app.state.usage_limiter = UsageLimiter(app.state.redis, settings.usage_daily_usd, settings.usage_daily_tokens,
+                                           settings.usage_rate_per_minute, set(settings.bot_admin_ids))
     # Б4.1: Postgres — только если история хранится в нём (CHAT_REPOSITORY=postgres)
     engine = None
     if settings.chat_repository == "postgres":

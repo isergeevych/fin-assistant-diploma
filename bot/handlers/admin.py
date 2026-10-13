@@ -41,6 +41,10 @@ def _token(settings: BotSettings) -> str:
     return settings.admin_token.get_secret_value() if settings.admin_token else ""
 
 
+def _n(value: int) -> str:
+    return f"{value:,}".replace(",", " ")  # 50 000, а не 50,000
+
+
 def format_stats(s: dict) -> str:
     e = html.escape
     ratio = "—" if s.get("feedback_up_ratio") is None else f"{s['feedback_up_ratio']:.0%}"
@@ -56,6 +60,17 @@ def format_stats(s: dict) -> str:
     if s.get("top_questions"):
         lines.append("\n<b>Частые вопросы:</b>")
         lines += [f"{i}. {e(q['question'])} — {q['count']}" for i, q in enumerate(s["top_questions"], 1)]
+    spend = s.get("spend_today") or []
+    lines.append(f"\n<b>Расходы сегодня</b> (лимит ${s.get('daily_limit_usd', 0):g} и "
+                 f"{_n(s.get('daily_limit_tokens', 0))} токенов на человека, сброс в 00:00 МСК):")
+    if not spend:
+        lines.append("пока ничего")
+    for r in spend[:10]:
+        mark = " (админ, без лимита)" if r.get("exempt") else ""
+        lines.append(f"{e(r['owner'])}{mark}: ${r['usd']:.4f}, {_n(r['tokens'])} ток., {r['messages']} сообщ.")
+    total = sum(r["usd"] for r in spend)
+    if spend:
+        lines.append(f"Всего за сегодня: <b>${total:.4f}</b>")
     return "\n".join(lines)
 
 
