@@ -5,6 +5,22 @@ import httpx
 from bot.services.backend_client import BackendStreamError
 
 
+INPUT_REJECTED_TEXT = (
+    "Похоже на попытку изменить мои правила — так я не работаю. "
+    "Я помогаю с личными финансами: налоги и вычеты, вклады, кредиты, бюджет, защита от мошенников. "
+    "Задайте вопрос по одной из этих тем."
+)
+
+
+def _error_code(response: httpx.Response) -> str | None:
+    try:
+        body = response.json()
+    except (ValueError, httpx.ResponseNotRead):
+        return None
+    error = body.get("error") if isinstance(body, dict) else None
+    return error.get("code") if isinstance(error, dict) else None
+
+
 def user_message_for(exc: Exception) -> str:
     if isinstance(exc, httpx.ConnectError | httpx.ConnectTimeout):
         return "Сервис недоступен, попробуйте позже."
@@ -13,6 +29,8 @@ def user_message_for(exc: Exception) -> str:
     if isinstance(exc, httpx.HTTPStatusError):
         status = exc.response.status_code
         if status == 400:
+            if _error_code(exc.response) == "input_rejected":  # П4: фильтр на входе — объясняем, а не «не могу обработать»
+                return INPUT_REJECTED_TEXT
             return "Не могу обработать этот запрос. Попробуйте сформулировать иначе."
         if status == 403:
             return "Сообщение нарушает правила сервиса, я не могу на него ответить."

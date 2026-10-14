@@ -8,6 +8,10 @@
 Каждая категория — отдельный тестовый пользователь (stress-<категория>) и отдельный чат; диалоги (несколько
 реплик подряд) идут в одном чате. Между сообщениями одного пользователя — пауза (лимит 10 сообщений в минуту).
 Результат: tests/stress/{YYYY-MM-DD_HHMM}.json и .md (таблица проблем).
+
+Судья и автопроверки смотрят на то, что УВИДИТ пользователь Telegram (поле answer): ответ backend после
+bot/services/markdown.py, текст ошибки из bot/handlers/errors.py, готовая реплика bot/services/smalltalk.py.
+Сырой ответ API сохраняется отдельно (backend_answer) — по нему видно, справляется ли сам промпт без бота.
 """
 
 import argparse
@@ -22,6 +26,10 @@ import httpx
 from openai import AsyncOpenAI
 
 from app.core.config import get_settings
+from bot.handlers.errors import user_message_for
+from bot.services.backend_client import BackendStreamError
+from bot.services.markdown import to_plain
+from bot.services.smalltalk import canned_reply
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "tests" / "stress"
@@ -168,6 +176,18 @@ def parse_sse(text: str) -> tuple[str, list[dict], str | None]:
     return answer, sources, error
 
 
+def shown_in_telegram(r: httpx.Response, answer: str, error: str | None) -> str:
+    """Что бот покажет в чате на этот ответ API — те же функции, что в bot/."""
+    if r.status_code != 200:
+        try:
+            r.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            return user_message_for(e)
+    if error:
+        return user_message_for(BackendStreamError(error, ""))
+    return to_plain(answer)
+
+
 async def run_category(http: httpx.AsyncClient, category: str, cases: list) -> list[dict]:
     rows = []
     for n, (turns, expected, keywords) in enumerate(cases, 1):
@@ -183,10 +203,12 @@ async def run_category(http: httpx.AsyncClient, category: str, cases: list) -> l
                 detail = r.json().get("detail") if r.headers.get("content-type", "").startswith("application/json") else r.text
                 answer, sources, error = "", [], f"HTTP {r.status_code}: {detail}"
             await asyncio.sleep(PAUSE_SEC)
+        canned = canned_reply(turns[-1])
         rows.append({"category": category, "case": n, "turns": turns, "expected": expected, "keywords": keywords,
-                     "status": r.status_code, "answer": answer, "error": error, "sources": len(sources),
-                     "latency_ms": latency})
-        print(f"  {category:<10} #{n:<2} {r.status_code} {latency:>6} мс  {(answer or error or '')[:90]!r}")
+                     "status": r.status_code, "answer": canned or shown_in_telegram(r, answer, error),
+                     "backend_answer": answer, "canned": canned is not None, "error": error,
+                     "sources": len(sources), "latency_ms": latency})
+        print(f"  {category:<10} #{n:<2} {r.status_code} {latency:>6} мс  {rows[-1]['answer'][:90]!r}")
     return rows
 
 
@@ -196,6 +218,8 @@ def auto_checks(row: dict) -> list[str]:
         flags.append("сырая markdown-разметка")
     if REFUSAL in a and row["category"] in ("calc", "greetings", "dialog", "long", "realtime"):
         flags.append("«по базе не нашёл» там, где база не нужна")
+    elif row.get("canned") and REFUSAL in row.get("backend_answer", ""):
+        flags.append("бот ответил готовой репликой, но сам backend — «по базе не нашёл»")
     squash = lambda s: re.sub(r"\s", "", s)  # noqa: E731 — модель пишет числа с неразрывными пробелами (12 000)
     missing = [k for k in row["keywords"] if squash(k) not in squash(a)]
     if missing:

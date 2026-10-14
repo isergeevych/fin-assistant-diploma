@@ -55,7 +55,7 @@ async def test_replace_event_replaces_shown_text_and_hides_feedback():
                                  final_markup=lambda: "KEYBOARD")
     assert ok is False
     final_call = reply.edit_text.call_args
-    assert final_call.args[0] == "Не могу показать ответ — он мог нарушить правила."
+    assert final_call.kwargs["text"] == "Не могу показать ответ — он мог нарушить правила."
     assert final_call.kwargs["reply_markup"] is None  # за отмодерированный ответ не голосуют
 
 

@@ -13,7 +13,8 @@ edit (Б4.2, запасной): сообщение-заглушка + edit_text 
 
 Финальное сообщение может нести клавиатуру (👍/👎, Б4.4): final_markup вызывается ПОСЛЕ
 стрима, когда уже известен id ответа.
-Текст модели всегда отправляется БЕЗ parse_mode: ответ LLM не должен внедрять разметку.
+Разметка: Markdown модели переводится в безопасный HTML (bot/services/markdown.py) — весь HTML из ответа
+экранируется, ссылки не становятся кликабельными; если Telegram отверг разметку — отправляется чистый текст.
 """
 
 import time
@@ -26,6 +27,7 @@ from aiogram.types import InlineKeyboardMarkup, Message
 
 from bot.handlers.errors import user_message_for
 from bot.services.backend_client import BackendStreamError
+from bot.services.markdown import to_plain, to_telegram_html
 
 TELEGRAM_LIMIT = 4096
 PLACEHOLDER = "…"
@@ -35,6 +37,16 @@ MarkupFactory = Callable[[], InlineKeyboardMarkup | None]
 
 def _clip(text: str) -> str:
     return text if len(text) <= TELEGRAM_LIMIT else text[: TELEGRAM_LIMIT - 1] + "…"
+
+
+async def _send(method, text: str, **kwargs):
+    """Отправка с HTML-разметкой; «can't parse entities» — повтор чистым текстом."""
+    try:
+        return await method(text=to_telegram_html(text), parse_mode="HTML", **kwargs)
+    except TelegramBadRequest as e:
+        if "parse" not in str(e).lower() and "entit" not in str(e).lower():
+            raise
+        return await method(text=to_plain(text), parse_mode=None, **kwargs)
 
 
 def _final_text(buffer: str, error: BackendStreamError | None) -> str:
@@ -66,12 +78,12 @@ async def _stream_draft(message: Message, chunks: AsyncIterator[str], interval_s
             buffer += delta
             now = time.monotonic()
             if buffer.strip() and now - last >= interval_sec:
-                await bot.send_message_draft(chat_id=chat_id, draft_id=draft_id, text=_clip(buffer), parse_mode=None)
+                await _send(bot.send_message_draft, _clip(buffer), chat_id=chat_id, draft_id=draft_id)
                 last = now
     except BackendStreamError as e:
         error = e
     markup = final_markup() if (final_markup and error is None) else None
-    await bot.send_message(chat_id=chat_id, text=_final_text(buffer, error), parse_mode=None, reply_markup=markup)
+    await _send(bot.send_message, _final_text(buffer, error), chat_id=chat_id, reply_markup=markup)
     return error is None
 
 
@@ -98,7 +110,7 @@ async def _edit(reply: Message, text: str, shown: str, markup: InlineKeyboardMar
     if text == shown and markup is None:
         return shown
     try:
-        await reply.edit_text(text, parse_mode=None, reply_markup=markup)
+        await _send(reply.edit_text, text, reply_markup=markup)
     except TelegramBadRequest as e:
         if "message is not modified" not in str(e):
             raise

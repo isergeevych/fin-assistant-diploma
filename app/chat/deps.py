@@ -82,7 +82,7 @@ def get_chat_service(
 ) -> ChatService:
     guard = SecurityGuard(
         settings.security_enabled,
-        render_template("chat_system_v1.j2", product_name=settings.product_name),
+        render_template("chat_system_v2.j2", product_name=settings.product_name),
         canary,
     )
     rag = getattr(request.app.state, "rag", None) if settings.chat_use_rag else None
