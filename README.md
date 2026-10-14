@@ -1,6 +1,9 @@
 # Финпомощник — AI-ассистент по личным финансам
 
 > **Проверяющему:** указатель по всем 29 ДЗ курса — [SUBMISSION.md](SUBMISSION.md).
+>
+> **Итоговая аттестация:** видео-демонстрация — _ссылка будет добавлена после записи_ ·
+> презентация — _ссылка будет добавлена_ · обоснование решений — [docs/decisions.md](docs/decisions.md).
 
 Дипломный проект курса «ИИ-разработчик: от API до агентов». Один растущий репозиторий: каждое ДЗ модулей 3–6
 добавляет слой к одному сервису. Все данные пользователей — **синтетические**.
@@ -13,6 +16,41 @@
   и честным отказом, если ответа в базе нет;
 - работает через HTTP API (FastAPI, SSE-стриминг) и Telegram-бота;
 - защищён от prompt injection (валидатор ввода, canary, фильтр вывода), маскирует персональные данные в логах.
+
+## Сценарии использования
+
+| Сценарий | Пример | Что происходит |
+|---|---|---|
+| Вопрос о правилах | «Сколько вернут за лечение зубов?» | ответ по базе знаний со ссылкой [1] на документ |
+| Уточнение в диалоге | «А сроки какие?» после вопроса о вычете | вопрос переписывается с учётом истории, затем поиск |
+| Вопрос вне базы | «Как оформить загранпаспорт?» | честный отказ «по базе не нашёл», без выдумки |
+| Расчёт по своим цифрам | «Доход 100 000, расходы 55 000 — сколько остаётся?» | модель считает сама |
+| Разбор чека | фото чека или PDF-выписка | позиции и итог, траты по категориям |
+| Мошенники | «Звонят из банка и просят код из SMS» | порядок действий по базе + предупреждение не пересылать данные |
+| Действие с подтверждением | `POST /agent/stream`: «Найди лимит страхования вкладов и отправь письмом на …» | агент ищет в базе, готовит письмо и **ждёт подтверждения**; после `resume` письмо уходит (видно в Mailpit) |
+
+Подробнее о том, почему выбраны эта область и такое устройство, — [docs/decisions.md](docs/decisions.md).
+
+## Архитектура
+
+```mermaid
+flowchart LR
+    TG["Telegram-бот<br/>(aiogram, тонкий клиент)"] -->|"HTTP + SSE"| API
+    API["FastAPI<br/>лимиты · проверка ввода · модерация"] --> SVC["ChatService<br/>история → поиск → промпт"]
+    SVC --> PG[("Postgres<br/>чаты, история,<br/>чекпоинты агента")]
+    SVC --> QD[("Qdrant<br/>56 документов")]
+    SVC --> EMB["Ollama на CPU<br/>qwen3-embedding 0.6B"]
+    SVC --> LLM["LLM-клиент<br/>retry · circuit breaker · fallback"]
+    LLM --> OR["OpenRouter<br/>gpt-5.4-mini → claude-haiku-4.5"]
+    API --> RD[("Redis<br/>кеш, лимиты")]
+    API --> AG["Агент LangGraph<br/>/agent/stream"]
+    AG --> MAIL["SMTP (Mailpit)"]
+    SVC -.-> PHX["Phoenix<br/>трейсы"]
+```
+
+Подробная схема со слоями и точками отказа — [docs/architecture.md](docs/architecture.md); граф агента —
+[docs/agent-graph.png](docs/agent-graph.png) и [docs/agent-persistent-report.md](docs/agent-persistent-report.md);
+качество поиска — [docs/rag_evaluation.md](docs/rag_evaluation.md).
 
 ## Запуск
 
@@ -50,7 +88,7 @@ docker compose ps                # app: healthy; migrate и ingest: exited (0) �
 
 ```bash
 uv sync --extra agents --group dev          # минимум; полный набор: + --extra eval --extra tracing --extra rerank
-uv run pytest -q                            # ~190 тестов; с Postgres — если запущен Docker, иначе они пропускаются
+uv run pytest -q                            # ~230 тестов; с Postgres — если запущен Docker, иначе они пропускаются
 ```
 
 Без `--extra agents` тесты агентов (6.3–6.4) пропускаются, сервис работает, `/agent/stream` отвечает 503.
@@ -60,6 +98,60 @@ uv run pytest -q                            # ~190 тестов; с Postgres —
 **Если что-то не так:** порт 8000 занят — поменяйте `APP_PORT`; `ingest` завершился с ошибкой — `docker compose logs
 ingest` (чаще всего недоступна Ollama: используйте `--no-ollama`); кириллица в консоли Windows — `set PYTHONIOENCODING=utf-8`.
 
+## Переменные окружения
+
+Все переменные — в [.env.example](.env.example) с комментариями; `scripts/init_env.py` создаёт из него `.env` и сам
+генерирует пароли и токены. **Обязательна** вручную только `LLM__API_KEY`; бот — при `BOT_TOKEN`.
+
+| Переменная | По умолчанию | Назначение |
+|---|---|---|
+| **Модель** | | |
+| `LLM__API_KEY` | — (**обязательно**) | ключ OpenRouter |
+| `LLM__BASE_URL` | `https://openrouter.ai/api/v1` | OpenAI-совместимый API |
+| `LLM__DEFAULT_MODEL` | `openai/gpt-5.4-mini` | основная модель ответов |
+| `LLM__FALLBACK_MODEL` | `anthropic/claude-haiku-4.5` | резерв другого вендора; пусто — без резерва |
+| `LLM__LOCAL_BASE_URL`, `LLM__LOCAL_MODEL` | Ollama, `gemma3:4b` | последний резерв — локальная модель; пусто — без него |
+| `LLM__REQUEST_TIMEOUT`, `LLM__CALL_TIMEOUT` | 30, 15 с | таймаут HTTP-запроса и дедлайн попытки у одного провайдера |
+| `LLM__MAX_RETRIES`, `LLM__MAX_CONCURRENCY` | 3, 5 | повторы на 429/5xx; одновременных вызовов модели на процесс |
+| `PROMPT_VERSION`, `PRODUCT_NAME` | `v1`, `Финпомощник` | версия промпта function calling (ДЗ 3.1); имя ассистента в промптах |
+| **Сервис** | | |
+| `APP_PORT` | 8000 | порт API на хосте |
+| `REDIS_URL`, `CACHE_TTL_SECONDS` | `redis://127.0.0.1:6379/0`, 3600 | кеш ответов и лимиты |
+| `CORS_ORIGINS`, `LOG_LEVEL` | localhost:3000/8000, `INFO` | |
+| `MODERATION_ENABLED` | `true` | модерация входящих (словарь; + OpenAI moderation при `OPENAI_API_KEY`) |
+| `ADMIN_TOKEN`, `INTERNAL_TOKEN` | генерируются | `X-Admin-Token` для админских маршрутов; общий секрет app ↔ bot |
+| **Чат и история** | | |
+| `CHAT_REPOSITORY` | `postgres` | `postgres` или `json` (файлы, без БД) |
+| `CHAT_CONTEXT_STRATEGY`, `CHAT_CONTEXT_WINDOW` | `sliding`, 10 | сколько сообщений истории идёт в контекст |
+| `LLM_CONTEXT_TOKENS`, `LLM_RESPONSE_TOKENS`, `LLM_SAFETY_MARGIN_TOKENS` | 16000, 1024, 512 | бюджет токенов контекста |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` | `fin`, генерируется, `fin` | Postgres (в compose адрес подставляется сам) |
+| **Telegram-бот** | | |
+| `BOT_TOKEN` | — | токен от @BotFather; без него контейнер `bot` не запускается |
+| `BOT_ADMIN_IDS` | — | Telegram ID админов через запятую: админ-кнопки, без лимитов |
+| `BACKEND_URL`, `BOT_URL`, `BOT_API_PORT` | — | адреса app ↔ bot (в compose подставляются сами) |
+| `STREAM_MODE`, `BROADCAST_POLL_SEC` | `draft`, 15 | как бот показывает поток (`draft` / `edit`); опрос рассылок |
+| `OPENAI_API_KEY` | — | только голос → текст (Whisper) и OpenAI moderation; без него голосовые отклоняются |
+| **Поиск по базе (RAG)** | | |
+| `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL` | Ollama, `qwen3-embedding:0.6b` | эмбеддинги; `--no-ollama` → `baai/bge-m3` через OpenRouter |
+| `EMBEDDING_BASE_URL_DOCKER` | — | адрес эмбеддингов для контейнеров; пусто — Ollama на хосте |
+| `EMBEDDING_DIM`, `EMBEDDING_BATCH_SIZE` | 1024, 64 | размерность (должна совпадать с моделью), размер батча |
+| `QDRANT_URL`, `QDRANT_API_KEY`, `QDRANT_COLLECTION` | `http://127.0.0.1:6333`, генерируется, `documents` | векторная БД |
+| `RAG_ENABLED`, `RAG_TOP_K`, `RAG_SCORE_THRESHOLD` | `true`, 3, 0.35 | поиск по базе в чате; top-K для `/rag/query` (ДЗ 5.3); порог отказа по вектору |
+| `RAG_CHUNK_SIZE`, `RAG_CHUNK_OVERLAP` | 512, 64 | нарезка документов, токенов |
+| `RAG_LLM_*` | — | отдельная модель для `/rag/query`; пусто — основная |
+| **Оценка и трейсы** | | |
+| `EVAL_JUDGE_BASE_URL`, `EVAL_JUDGE_MODEL`, `EVAL_JUDGE_API_KEY`, `EVAL_JUDGE_REASONING_EFFORT` | — | судья RAGAS (`scripts/run_eval.py`) |
+| `PHOENIX_LLAMAINDEX_TRACING` | `false` | дерево «запрос → поиск → модель» в Phoenix |
+| **Агент** | | |
+| `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_API_KEY`, `AGENT_REASONING_EFFORT` | — | модель агента; пусто — основная |
+| `AGENT_PREMIUM_MODEL` | `openai/gpt-5.4` | ответ после замечания критика (ДЗ 6.2) |
+| `AGENT_CHECKPOINTER` | `sqlite` (в compose — `postgres`) | где хранится состояние агента: `memory` / `sqlite` / `postgres` |
+| `AGENT_DEFAULT_ROLE` | `write-with-approve` | права: `read-only` / `write-with-approve` / `full` |
+| `SMTP_HOST`, `SMTP_PORT` | `127.0.0.1`, 1025 | почта агента (Mailpit) |
+| **Лимиты на пользователя** | | |
+| `USAGE_RATE_PER_MINUTE` | 10 | сообщений в минуту |
+| `USAGE_DAILY_USD`, `USAGE_DAILY_TOKENS` | 1.0, 50000 | бюджет в сутки (по Москве); 0 — выключено; админы без лимитов |
+
 ## Где какое ДЗ
 
 | ДЗ | Что | Где смотреть |
@@ -68,7 +160,7 @@ ingest` (чаще всего недоступна Ollama: используйте
 | 3.2 | Архитектурный паспорт, ADR, LiteLLM | `docs/architecture.md`, `docs/litellm/` |
 | 3.3 | Асинхронный клиент, бенчмарк | `app/services/llm_client.py`, `scripts/benchmark.py` |
 | 3.4 | FastAPI-сервис, кеш | `app/main.py`, `app/routers/`, `app/services/llm.py` |
-| 3.5 | Docker | `Dockerfile`, `compose.yaml` |
+| 3.5 | Docker | `Dockerfile`, `docker-compose.yml` |
 | 3.6 | Логи и трейсы | `app/observability/`, `docs/observability/` |
 | 3.7 | Тесты и G-Eval | `tests/`, `eval/` |
 | 3.8 | Безопасность, garak | `app/services/security/`, `docs/security/` |

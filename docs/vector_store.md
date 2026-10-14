@@ -2,7 +2,7 @@
 
 ## Как поднято
 
-- Сервис `qdrant` в `compose.yaml`: образ `qdrant/qdrant:v1.19.2-unprivileged` (процесс не под root),
+- Сервис `qdrant` в `docker-compose.yml`: образ `qdrant/qdrant:v1.19.2-unprivileged` (процесс не под root),
   порты `6333` (REST + dashboard) и `6334` (gRPC) только на `127.0.0.1`, named volume `qdrant_storage`,
   healthcheck по TCP, `restart: unless-stopped`. `app` стартует после `qdrant: service_healthy`.
 - **API-ключ даже на dev** (`QDRANT__SERVICE__API_KEY` из `.env`): без ключа — 401, с ключом — 200 (проверено).

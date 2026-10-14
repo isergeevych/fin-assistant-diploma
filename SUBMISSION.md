@@ -39,7 +39,7 @@
 | 3.2 | Архитектурный паспорт, ADR, LiteLLM | [docs/architecture.md](docs/architecture.md), [docs/litellm/](docs/litellm/README.md) | fallback на claude-haiku при отказе primary |
 | 3.3 | Async-клиент, бенчмарк | `app/services/llm_client.py`, [scripts/benchmark_results.md](scripts/benchmark_results.md) | ×5,0 (c=5), ×9,2 (c=10) |
 | 3.4 | FastAPI-сервис | `app/main.py`, `app/routers/` | кеш 1,12 → 0,21 с, 502 `llm_auth` |
-| 3.5 | Docker | `Dockerfile`, `compose.yaml` | multi-stage, non-root, healthcheck |
+| 3.5 | Docker | `Dockerfile`, `docker-compose.yml` | multi-stage, non-root, healthcheck |
 | 3.6 | Логи и трейсы | `app/observability/`, [docs/observability/](docs/observability/README.md) | Phoenix, маскирование PII |
 | 3.7 | Тесты и G-Eval | `tests/`, `eval/`, `eval/runs/` | 4,18 → 4,95 из 5 за 3 итерации; пороги ✓ |
 | 3.8 | Безопасность, garak | `app/services/security/`, [docs/security/](docs/security/garak_after_2026-10-13.md) | инъекции 20 % → 0 %, base64 80 % → 2 % |
