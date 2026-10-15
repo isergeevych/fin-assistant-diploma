@@ -11,7 +11,7 @@
 Что умеет:
 
 - отвечает на вопросы о тратах пользователя (function calling над его операциями) и о курсах ЦБ;
-- ведёт диалог с историей (Postgres), понимает фото чеков, PDF и DOCX, голос (при ключе OpenAI);
+- ведёт диалог с историей (Postgres), понимает фото чеков, PDF и DOCX, голосовые сообщения;
 - отвечает по базе знаний из 56 документов (налоги, вклады, кредиты, мошенничество, FAQ приложения) с цитатами
   и честным отказом, если ответа в базе нет;
 - работает через HTTP API (FastAPI, SSE-стриминг) и Telegram-бота;
@@ -130,7 +130,8 @@ ingest` (чаще всего недоступна Ollama: используйте
 | `BOT_ADMIN_IDS` | — | Telegram ID админов через запятую: админ-кнопки, без лимитов |
 | `BACKEND_URL`, `BOT_URL`, `BOT_API_PORT` | — | адреса app ↔ bot (в compose подставляются сами) |
 | `STREAM_MODE`, `BROADCAST_POLL_SEC` | `draft`, 15 | как бот показывает поток (`draft` / `edit`); опрос рассылок |
-| `OPENAI_API_KEY` | — | только голос → текст (Whisper) и OpenAI moderation; без него голосовые отклоняются |
+| `OPENAI_API_KEY` | — | Whisper для голоса и OpenAI moderation; без него голос распознаёт `STT_MODEL` |
+| `STT_MODEL` | `google/gemini-3.5-flash-lite` | голос → текст через OpenRouter тем же ключом `LLM__API_KEY` |
 | **Поиск по базе (RAG)** | | |
 | `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL` | Ollama, `qwen3-embedding:0.6b` | эмбеддинги; `--no-ollama` → `baai/bge-m3` через OpenRouter |
 | `EMBEDDING_BASE_URL_DOCKER` | — | адрес эмбеддингов для контейнеров; пусто — Ollama на хосте |

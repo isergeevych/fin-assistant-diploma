@@ -80,8 +80,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://fin:fin@127.0.0.1:5433/fin"
 
     # --- Мультимодальность и обратный канал в бота (Б4.3) ---
-    # Whisper (голос → текст) есть только у OpenAI напрямую; без ключа голосовые отклоняются с 503.
+    # Голос → текст: при OPENAI_API_KEY — Whisper; иначе модель с аудио-входом через OpenRouter (ключ LLM__API_KEY).
     openai_api_key: SecretStr | None = None
+    stt_model: str = "google/gemini-3.5-flash-lite"
     bot_url: str = "http://bot:9000"
     internal_token: SecretStr | None = None  # общий секрет app ↔ bot для /notify и системных эндпоинтов
     bot_api_port: int = 9000

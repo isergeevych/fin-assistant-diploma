@@ -15,6 +15,7 @@ send_message(chat_id, text, media):
      Если стрим оборвался — сохраняется накопленное (с пометкой в логе).
 """
 
+import re
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from uuid import UUID, uuid4
@@ -24,6 +25,7 @@ import structlog
 
 from app.chat.context import count_text_tokens, count_tokens, fit_to_budget, sliding_window
 from app.chat.domain import Chat, ChatMessage
+from app.chat.media import VOICE_PREFIX
 from app.chat.repository import ChatRepository
 from app.core.config import Settings
 from app.core.exceptions import LLMError, ModerationBlockedError, OutputBlockedError
@@ -41,6 +43,16 @@ IncidentSink = Callable[[str, str, ModerationResult, str], Awaitable[None]]
 
 class ChatNotFoundError(LookupError):
     pass
+
+
+def search_question(user_content: str, media_part: dict | None) -> str:
+    """Что искать в базе знаний. У голосового вопрос — в расшифровке, а подпись бота — заглушка вида
+    «[голосовое сообщение]»: искать по ней — значит не найти ничего и ответить по памяти модели."""
+    text = media_part.get("text", "") if media_part and media_part.get("type") == "text" else ""
+    if not text.startswith(VOICE_PREFIX):
+        return user_content
+    caption = "" if re.fullmatch(r"\[[^\]]*\]", user_content.strip()) else user_content.strip()
+    return f"{caption}\n{text[len(VOICE_PREFIX):]}".strip()
 
 
 class ResponseReplaced(LLMError):
@@ -136,7 +148,7 @@ class ChatService:
         system_prompt = messages[0]["content"]
         self.last_sources = []
         if self.rag is not None:  # Б5.5: диалоговый RAG поверх истории из М4
-            messages = await self._with_knowledge(messages, user_content)
+            messages = await self._with_knowledge(messages, search_question(user_content, media_part))
         log.info("chat.context_built", chat_id=str(chat_id), messages=len(messages),
                  prompt_tokens_estimate=count_tokens(messages), prompt_hash=prompt_hash(user_content))
 

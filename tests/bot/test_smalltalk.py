@@ -48,3 +48,10 @@ def test_input_rejected_explains_instead_of_generic_text():
 def test_other_400_keeps_generic_text():
     assert user_message_for(_http_error(400, {"error": {"code": "bad"}})).startswith("Не могу обработать")
     assert user_message_for(_http_error(400, ["not", "a", "dict"])).startswith("Не могу обработать")
+
+
+def test_media_errors_show_server_text():
+    assert user_message_for(_http_error(422, {"detail": "Не удалось распознать речь"})) == "Не удалось распознать речь"
+    assert user_message_for(_http_error(413, {"detail": "Файл больше 10 МБ"})) == "Файл больше 10 МБ"
+    # 422 валидации FastAPI (detail — список) — не показываем сырым
+    assert user_message_for(_http_error(422, {"detail": [{"loc": ["body"]}]})) == "Что-то пошло не так, попробуйте позже."

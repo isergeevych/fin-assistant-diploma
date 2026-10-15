@@ -3,8 +3,9 @@
 
   картинка  → {"type": "image_url", ...} с data-URI: мультимодальная модель видит исходные
               пиксели в том же вызове (отдельного Vision-вызова «картинка → текст» нет);
-  голос     → Whisper-1 → {"type": "text", "text": "[пользователь сказал голосом]: ..."}
-              (Whisper принимает ogg/opus из Telegram напрямую — FFmpeg и subprocess не нужны);
+  голос     → текст → {"type": "text", "text": "[пользователь сказал голосом]: ..."}; два способа (SpeechToText):
+              Whisper-1 при OPENAI_API_KEY, иначе аудио-модель через OpenRouter (input_audio, STT_MODEL).
+              Оба принимают ogg/opus из Telegram напрямую — FFmpeg и subprocess не нужны;
   PDF/DOCX  → извлечённый текст (≤ 30 000 символов) → text-part.
 
 Безопасность:
@@ -18,9 +19,13 @@
 import base64
 import io
 import zipfile
+from dataclasses import dataclass
+from typing import Literal
 
 from fastapi import UploadFile
 from openai import AsyncOpenAI
+
+from app.services.usage_limits import record_usage
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_BYTES = 5 * 1024 * 1024  # картинка хранится base64 в истории — держим её небольшой
@@ -29,6 +34,22 @@ PDF_MAX_PAGES = 50
 DOCX_MAX_UNZIPPED = 50 * 1024 * 1024
 
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+VOICE_PREFIX = "[пользователь сказал голосом]:\n"
+# формат input_audio по MIME из sniff_mime
+AUDIO_FORMATS = {"audio/ogg": "ogg", "audio/mpeg": "mp3", "audio/mp4": "m4a", "audio/wav": "wav"}
+TRANSCRIBE_PROMPT = ("Дословно расшифруй речь на аудио на языке оригинала. Верни только текст расшифровки, "
+                     "без комментариев и кавычек. Если речи нет — верни пустую строку.")
+
+
+@dataclass(frozen=True)
+class SpeechToText:
+    """whisper — OpenAI audio.transcriptions; chat — модель с аудио-входом через Chat Completions (OpenRouter)."""
+
+    client: AsyncOpenAI
+    kind: Literal["whisper", "chat"]
+    model: str
 
 
 class MediaError(ValueError):
@@ -72,7 +93,7 @@ async def read_limited(media: UploadFile, limit: int = MAX_UPLOAD_BYTES) -> byte
     return data
 
 
-async def media_to_part(media: UploadFile, stt_client: AsyncOpenAI | None = None) -> dict:
+async def media_to_part(media: UploadFile, stt: SpeechToText | None = None) -> dict:
     data = await read_limited(media)
     mime = sniff_mime(data)
     if mime is None:
@@ -85,8 +106,8 @@ async def media_to_part(media: UploadFile, stt_client: AsyncOpenAI | None = None
         return {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}}
 
     if mime.startswith("audio/"):
-        transcript = await whisper_transcribe(data, media.filename or "audio.ogg", stt_client)
-        return {"type": "text", "text": f"[пользователь сказал голосом]:\n{transcript}"}
+        transcript = await transcribe(data, mime, media.filename or "audio.ogg", stt)
+        return {"type": "text", "text": VOICE_PREFIX + transcript}
 
     if mime == "application/pdf":
         return {"type": "text", "text": f"[документ PDF]:\n{extract_pdf_text(data)[:MAX_TEXT_CHARS]}"}
@@ -97,14 +118,24 @@ async def media_to_part(media: UploadFile, stt_client: AsyncOpenAI | None = None
     raise MediaError(f"Неподдерживаемый тип файла: {mime}")
 
 
-async def whisper_transcribe(audio_bytes: bytes, filename: str, client: AsyncOpenAI | None) -> str:
-    """Whisper-1 принимает ogg/m4a/mp3/wav/flac/webm напрямую — конвертация не нужна."""
-    if client is None:
-        raise MediaError("Распознавание голоса не настроено (нет OPENAI_API_KEY)", status=503)
-    f = io.BytesIO(audio_bytes)
-    f.name = filename  # SDK определяет формат по расширению
-    result = await client.audio.transcriptions.create(model="whisper-1", file=f)
-    return result.text
+async def transcribe(audio_bytes: bytes, mime: str, filename: str, stt: SpeechToText | None) -> str:
+    if stt is None:
+        raise MediaError("Распознавание голоса не настроено (нет ни OPENAI_API_KEY, ни ключа OpenRouter)", status=503)
+    if stt.kind == "whisper":
+        f = io.BytesIO(audio_bytes)
+        f.name = filename  # SDK определяет формат по расширению
+        result = await stt.client.audio.transcriptions.create(model=stt.model, file=f)
+        text = result.text
+    else:
+        audio = {"data": base64.b64encode(audio_bytes).decode(), "format": AUDIO_FORMATS[mime]}
+        response = await stt.client.chat.completions.create(model=stt.model, messages=[{"role": "user", "content": [
+            {"type": "text", "text": TRANSCRIBE_PROMPT}, {"type": "input_audio", "input_audio": audio}]}])
+        record_usage(response.usage, stt.model)  # распознавание тоже идёт в дневной лимит пользователя
+        text = response.choices[0].message.content or ""
+    text = text.strip()
+    if not text:
+        raise MediaError("Не удалось распознать речь — попробуйте записать ещё раз или напишите текстом", status=422)
+    return text
 
 
 def extract_pdf_text(data: bytes) -> str:

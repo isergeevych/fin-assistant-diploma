@@ -42,7 +42,7 @@ async def handle_photo(message: Message, bot: Bot, backend: BackendClient, setti
 @router.message(StateFilter(None), F.voice)
 async def handle_voice(message: Message, bot: Bot, backend: BackendClient, settings: BotSettings) -> None:
     data = await download(bot, message.voice.file_id)
-    # ogg/opus уходит как есть: Whisper принимает его напрямую, конвертация не нужна
+    # ogg/opus уходит как есть: и Whisper, и аудио-модель через OpenRouter принимают его напрямую
     await ask_backend(message, backend, message.caption or "[голосовое сообщение]", settings,
                       media=data, mime="audio/ogg", filename="voice.ogg")
 

@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from starlette.datastructures import Headers
 
 from app.chat.deps import get_chat_service
-from app.chat.media import MediaError, media_to_part, sniff_mime
+from app.chat.media import MediaError, SpeechToText, media_to_part, sniff_mime
 from app.chat.repositories.json_repo import JsonChatRepository
 from app.chat.service import ChatService
 from app.core.config import LLMSettings, Settings, get_settings
@@ -87,13 +87,40 @@ async def test_mime_is_sniffed_not_trusted():
 
 
 async def test_voice_goes_through_whisper_with_prefix():
-    stt = MagicMock()
-    stt.audio.transcriptions.create = AsyncMock(return_value=MagicMock(text="сколько я потратил на кафе"))
+    client = MagicMock()
+    client.audio.transcriptions.create = AsyncMock(return_value=MagicMock(text="сколько я потратил на кафе"))
+    stt = SpeechToText(client, "whisper", "whisper-1")
     part = await media_to_part(upload(b"OggS\x00\x02" + b"\x00" * 50, "voice.ogg", "audio/ogg"), stt)
     assert part == {"type": "text", "text": "[пользователь сказал голосом]:\nсколько я потратил на кафе"}
-    sent_file = stt.audio.transcriptions.create.call_args.kwargs["file"]
+    sent_file = client.audio.transcriptions.create.call_args.kwargs["file"]
     assert sent_file.name == "voice.ogg"  # ogg уходит в Whisper как есть, без конвертации
-    assert stt.audio.transcriptions.create.call_args.kwargs["model"] == "whisper-1"
+    assert client.audio.transcriptions.create.call_args.kwargs["model"] == "whisper-1"
+
+
+def _chat_stt(text: str | None) -> tuple[SpeechToText, MagicMock]:
+    client = MagicMock()
+    reply = MagicMock(usage=None, choices=[MagicMock(message=MagicMock(content=text))])
+    client.chat.completions.create = AsyncMock(return_value=reply)
+    return SpeechToText(client, "chat", "google/gemini-3.5-flash-lite"), client
+
+
+async def test_voice_without_openai_key_goes_through_openrouter_audio_model():
+    stt, client = _chat_stt("  Сколько можно вернуть за лечение зубов?\n")
+    audio = b"OggS\x00\x02" + b"\x00" * 50
+    part = await media_to_part(upload(audio, "voice.ogg", "audio/ogg"), stt)
+    assert part == {"type": "text", "text": "[пользователь сказал голосом]:\nСколько можно вернуть за лечение зубов?"}
+    kwargs = client.chat.completions.create.call_args.kwargs
+    assert kwargs["model"] == "google/gemini-3.5-flash-lite"
+    audio_part = kwargs["messages"][0]["content"][1]
+    assert audio_part["type"] == "input_audio"
+    assert audio_part["input_audio"] == {"data": base64.b64encode(audio).decode(), "format": "ogg"}  # ogg как есть
+
+
+async def test_voice_with_no_speech_is_422_not_empty_question():
+    stt, _ = _chat_stt("   ")
+    with pytest.raises(MediaError) as e:
+        await media_to_part(upload(b"OggS" + b"\x00" * 10, "v.ogg", "audio/ogg"), stt)
+    assert e.value.status == 422
 
 
 async def test_voice_without_stt_key_is_503():

@@ -38,6 +38,14 @@ def user_message_for(exc: Exception) -> str:
             return "Нет доступа к этой функции."
         if status == 404:
             return "Диалог не найден — нажмите /start."
+        if status in (413, 415, 422):
+            # вложение: «Файл больше 10 МБ», «Неподдерживаемый тип файла», «Не удалось распознать речь…» — текст сервера
+            try:
+                detail = exc.response.json().get("detail")
+            except (ValueError, httpx.ResponseNotRead):
+                detail = None
+            if isinstance(detail, str):
+                return detail
         if status == 429:
             # лимиты на пользователя: сервер сам формулирует, что случилось и когда снова можно
             # («Лимит на сегодня исчерпан, обновится в 00:00 МСК.» / «не больше 10 сообщений в минуту…»)

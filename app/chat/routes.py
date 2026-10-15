@@ -29,7 +29,7 @@ from pydantic import BaseModel, Field
 from app.chat.deps import ChatServiceDep, DbSessionDep
 from app.chat.domain import Chat, ChatMessage
 from app.chat.feedback import FeedbackError, save_feedback
-from app.chat.media import MediaError, media_to_part
+from app.chat.media import MediaError, SpeechToText, media_to_part
 from app.chat.service import ResponseReplaced
 from app.core.exceptions import LLMError, ModerationBlockedError
 from app.core.sse import sse_event, sse_json
@@ -66,11 +66,15 @@ class SystemMessageIn(BaseModel):
     notify: bool = False
 
 
-def get_stt_client(settings: SettingsDep) -> AsyncOpenAI | None:
-    """Whisper есть только у OpenAI напрямую (на OpenRouter его нет). Нет ключа — голос не принимаем."""
-    if settings.openai_api_key is None:
-        return None
-    return AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+def get_stt_client(settings: SettingsDep) -> SpeechToText | None:
+    """Whisper — только у OpenAI напрямую; без его ключа — аудио-модель через OpenRouter тем же ключом, что ответы."""
+    if settings.openai_api_key is not None:
+        return SpeechToText(AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value()), "whisper", "whisper-1")
+    if settings.llm.api_key.get_secret_value():
+        client = AsyncOpenAI(base_url=settings.llm.base_url, api_key=settings.llm.api_key.get_secret_value(),
+                             timeout=settings.llm.request_timeout, max_retries=settings.llm.max_retries)
+        return SpeechToText(client, "chat", settings.stt_model)
+    return None
 
 
 @router.post("", response_model=CreateChatOut, summary="Создать чат")
@@ -95,7 +99,7 @@ async def send_message(
     chat_id: UUID,
     request: Request,
     service: ChatServiceDep,
-    stt: Annotated[AsyncOpenAI | None, Depends(get_stt_client)],
+    stt: Annotated[SpeechToText | None, Depends(get_stt_client)],
     content: str = Form(..., min_length=1, max_length=4000),
     media: UploadFile | None = File(None),
 ) -> StreamingResponse:
@@ -110,11 +114,15 @@ async def send_message(
                                 headers={"Retry-After": str(e.retry_after)}) from e
     service.check_input(content)
     media_part = media_meta = None
+    meter = SpendMeter()  # создаётся до распознавания голоса: его стоимость тоже идёт в лимит пользователя
     if media is not None:
+        token = current_meter.set(meter)
         try:
             media_part = await media_to_part(media, stt)
         except MediaError as e:
             raise HTTPException(status_code=e.status, detail=str(e)) from e
+        finally:
+            current_meter.reset(token)
         service.check_media_part(media_part)
         media_meta = {"mime": media.content_type, "size": media.size, "filename": media.filename}
     # Б4.4: модерация контента — текст пользователя + текст из документа/голоса
@@ -126,7 +134,6 @@ async def send_message(
         raise HTTPException(status_code=403, detail={"code": e.code, "categories": e.categories}) from e
 
     async def events() -> AsyncIterator[str]:
-        meter = SpendMeter()
         token = current_meter.set(meter)  # все LLM-вызовы ради этого сообщения (condense + ответ) пишут сюда
         try:
             async for delta in service.send_message(chat_id, content, media_part, media_meta):
